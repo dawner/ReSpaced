@@ -243,34 +243,34 @@ void G308_Geometry::CreateGLPolyGeometry(int objectNum) {
 
 	//texture setup
 	bool texturing = false;
-	if (objects[objectNum].properties.texture>0){
-		GLuint tex = objects[objectNum].properties.texture;
-		texturing=true;
-		if (objects[objectNum].properties.has_alpha) {
-			glEnable(GL_BLEND);
-			glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-			glEnable(GL_ALPHA);
-		}
-		glDisable(GL_TEXTURE_GEN_S);
-		glDisable(GL_TEXTURE_GEN_T);
-		glDisable(GL_TEXTURE_GEN_R);
+	// if (objects[objectNum].properties.texture>0){
+	// 	GLuint tex = objects[objectNum].properties.texture;
+	// 	texturing=true;
+	// 	if (objects[objectNum].properties.has_alpha) {
+	// 		glEnable(GL_BLEND);
+	// 		glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+	// 		glEnable(GL_ALPHA);
+	// 	}
+	// 	glDisable(GL_TEXTURE_GEN_S);
+	// 	glDisable(GL_TEXTURE_GEN_T);
+	// 	glDisable(GL_TEXTURE_GEN_R);
 
-		glEnable(GL_TEXTURE_2D);
-		glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE);
-		glBindTexture(GL_TEXTURE_2D, tex);
-	}
-	else if (objects[objectNum].properties.is_metallic){
-		glEnable( GL_TEXTURE_CUBE_MAP );
-    	glBindTexture( GL_TEXTURE_CUBE_MAP, environment);
-    	// Use texgen to apply cube map
-		glEnable(GL_TEXTURE_GEN_S);
-		glEnable(GL_TEXTURE_GEN_T);
-		glEnable(GL_TEXTURE_GEN_R);
+	// 	glEnable(GL_TEXTURE_2D);
+	// 	glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE);
+	// 	glBindTexture(GL_TEXTURE_2D, tex);
+	// }
+	// else if (objects[objectNum].properties.is_metallic){
+	// 	glEnable( GL_TEXTURE_CUBE_MAP );
+ //    	glBindTexture( GL_TEXTURE_CUBE_MAP, environment);
+ //    	// Use texgen to apply cube map
+	// 	glEnable(GL_TEXTURE_GEN_S);
+	// 	glEnable(GL_TEXTURE_GEN_T);
+	// 	glEnable(GL_TEXTURE_GEN_R);
 
-    	glTexGeni(GL_S, GL_TEXTURE_GEN_MODE, GL_REFLECTION_MAP);
-		glTexGeni(GL_T, GL_TEXTURE_GEN_MODE, GL_REFLECTION_MAP);
-		glTexGeni(GL_R, GL_TEXTURE_GEN_MODE, GL_REFLECTION_MAP);
-	}
+ //    	glTexGeni(GL_S, GL_TEXTURE_GEN_MODE, GL_REFLECTION_MAP);
+	// 	glTexGeni(GL_T, GL_TEXTURE_GEN_MODE, GL_REFLECTION_MAP);
+	// 	glTexGeni(GL_R, GL_TEXTURE_GEN_MODE, GL_REFLECTION_MAP);
+	// }
 
 	glBegin(GL_TRIANGLES);
 	for (int i = 0; i < curObj.m_nNumPolygon; i++) {
@@ -300,20 +300,20 @@ void G308_Geometry::CreateGLPolyGeometry(int objectNum) {
 	glPopMatrix();
 	glEndList();
 
-	if (texturing){
-		if (objects[objectNum].properties.has_alpha) {
-			glDisable(GL_BLEND);
-			glDisable(GL_ALPHA);
-		}
-		glDisable(GL_TEXTURE_2D);
-	}
-	else if(objects[objectNum].properties.is_metallic){
-		glBindTexture(GL_TEXTURE_CUBE_MAP, 0);
-		glDisable(GL_TEXTURE_CUBE_MAP);
-		glDisable(GL_TEXTURE_GEN_S);
-		glDisable(GL_TEXTURE_GEN_T);
-		glDisable(GL_TEXTURE_GEN_R);
-	}
+	// if (texturing){
+	// 	if (objects[objectNum].properties.has_alpha) {
+	// 		glDisable(GL_BLEND);
+	// 		glDisable(GL_ALPHA);
+	// 	}
+	// 	glDisable(GL_TEXTURE_2D);
+	// }
+	// else if(objects[objectNum].properties.is_metallic){
+	// 	glBindTexture(GL_TEXTURE_CUBE_MAP, 0);
+	// 	glDisable(GL_TEXTURE_CUBE_MAP);
+	// 	glDisable(GL_TEXTURE_GEN_S);
+	// 	glDisable(GL_TEXTURE_GEN_T);
+	// 	glDisable(GL_TEXTURE_GEN_R);
+	// }
 }
 
 void G308_Geometry::CreateGLWireGeometry(int objectNum) {
@@ -367,89 +367,89 @@ void G308_Geometry::toggleMode() {
 	}
 }
 
-void G308_Geometry::SetupSkyBox() {
+// void G308_Geometry::SetupSkyBox() {
 
 
-	// Assign a display list; return 0 if err
-	sky_box = glGenLists(1);
-	glNewList(sky_box, GL_COMPILE);
+// 	// Assign a display list; return 0 if err
+// 	sky_box = glGenLists(1);
+// 	glNewList(sky_box, GL_COMPILE);
 
-	//Draw filled polygons from vertices, normals and (if any) texture coordinates
-	glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
-	glPushMatrix();
+// 	//Draw filled polygons from vertices, normals and (if any) texture coordinates
+// 	glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+// 	glPushMatrix();
 
-	float len = 100;
+// 	float len = 100;
 
-	glEnable(GL_TEXTURE_CUBE_MAP);
- 	glBindTexture(GL_TEXTURE_CUBE_MAP, environment);
+// 	glEnable(GL_TEXTURE_CUBE_MAP);
+//  	glBindTexture(GL_TEXTURE_CUBE_MAP, environment);
 
- 	glEnable(GL_TEXTURE_GEN_S);
-	glEnable(GL_TEXTURE_GEN_T);
-	glEnable(GL_TEXTURE_GEN_R);
+//  	glEnable(GL_TEXTURE_GEN_S);
+// 	glEnable(GL_TEXTURE_GEN_T);
+// 	glEnable(GL_TEXTURE_GEN_R);
 
-	glTexGeni(GL_S, GL_TEXTURE_GEN_MODE, GL_REFLECTION_MAP);
-	glTexGeni(GL_T, GL_TEXTURE_GEN_MODE, GL_REFLECTION_MAP);
-	glTexGeni(GL_R, GL_TEXTURE_GEN_MODE, GL_REFLECTION_MAP);
-	//Top face
-	glBegin(GL_QUADS);
-		glTexCoord2d(1.0f, 0.0f); glVertex3f( len, len, -len); 
-		glTexCoord2d(1.0f, 1.0f); glVertex3f(-len, len, -len); 
-		glTexCoord2d(0.0, 1.0f); glVertex3f(-len, len, len); 
-		glTexCoord2d(0.0, 0.0f); glVertex3f( len, len, len); 
-	glEnd();
-	//bottom face
-	glBegin(GL_QUADS);
-		glTexCoord2d(1.0f, 0.0f); glVertex3f(-len, -len, len); 
-		glTexCoord2d(1.0f, 1.0f); glVertex3f(len, -len, len); 
-		glTexCoord2d(0.0, 1.0f); glVertex3f(len, -len, -len); 
-		glTexCoord2d(0.0, 0.0f); glVertex3f(-len, -len, -len); 
-	glEnd(); 
-	//front face
-	glBegin(GL_QUADS);
-		glTexCoord2d(0.0f, 0.0f); glVertex3f( len, len, len);
-		glTexCoord2d(1.0f, 0.0f); glVertex3f(-len, len, len); 
-		glTexCoord2d(1.0f, 1.0f); glVertex3f(-len, -len, len); 
-		glTexCoord2d(0.0f, 1.0f); glVertex3f( len, -len, len); 
-	glEnd();
-	//back face
-	glBegin(GL_QUADS);
-		glTexCoord2d(0.0f, 1.0f); glVertex3f( len, -len, -len); 
-		glTexCoord2d(1.0f, 1.0f); glVertex3f(-len, -len, -len); 
-		glTexCoord2d(1.0f, 0.0f); glVertex3f(-len, len, -len); 
-		glTexCoord2d(0.0f, 0.0f); glVertex3f( len, len, -len); 
-	glEnd();
- 	//Left face
-	glBegin(GL_QUADS);
-		glTexCoord2d(1.0f, 0.0f); glVertex3f(-len, len, -len); 
-		glTexCoord2d(1.0f, 1.0f); glVertex3f(-len, -len, -len); 
-		glTexCoord2d(0.0f, 1.0f); glVertex3f(-len, -len, len); 
-		glTexCoord2d(0.0f, 0.0f); glVertex3f(-len, len, len); 
-	glEnd();
-	//Right Face
-	glBegin(GL_QUADS);
-		glTexCoord2d(0.0f, 0.0f); glVertex3f( len, len, -len); 
-		glTexCoord2d(1.0f, 0.0f); glVertex3f( len, len, len); 
-		glTexCoord2d(1.0f, 1.0f); glVertex3f( len, -len, len); 
-		glTexCoord2d(0.0f, 1.0f); glVertex3f( len, -len, -len);
-	glEnd(); 
+// 	glTexGeni(GL_S, GL_TEXTURE_GEN_MODE, GL_REFLECTION_MAP);
+// 	glTexGeni(GL_T, GL_TEXTURE_GEN_MODE, GL_REFLECTION_MAP);
+// 	glTexGeni(GL_R, GL_TEXTURE_GEN_MODE, GL_REFLECTION_MAP);
+// 	//Top face
+// 	glBegin(GL_QUADS);
+// 		glTexCoord2d(1.0f, 0.0f); glVertex3f( len, len, -len); 
+// 		glTexCoord2d(1.0f, 1.0f); glVertex3f(-len, len, -len); 
+// 		glTexCoord2d(0.0, 1.0f); glVertex3f(-len, len, len); 
+// 		glTexCoord2d(0.0, 0.0f); glVertex3f( len, len, len); 
+// 	glEnd();
+// 	//bottom face
+// 	glBegin(GL_QUADS);
+// 		glTexCoord2d(1.0f, 0.0f); glVertex3f(-len, -len, len); 
+// 		glTexCoord2d(1.0f, 1.0f); glVertex3f(len, -len, len); 
+// 		glTexCoord2d(0.0, 1.0f); glVertex3f(len, -len, -len); 
+// 		glTexCoord2d(0.0, 0.0f); glVertex3f(-len, -len, -len); 
+// 	glEnd(); 
+// 	//front face
+// 	glBegin(GL_QUADS);
+// 		glTexCoord2d(0.0f, 0.0f); glVertex3f( len, len, len);
+// 		glTexCoord2d(1.0f, 0.0f); glVertex3f(-len, len, len); 
+// 		glTexCoord2d(1.0f, 1.0f); glVertex3f(-len, -len, len); 
+// 		glTexCoord2d(0.0f, 1.0f); glVertex3f( len, -len, len); 
+// 	glEnd();
+// 	//back face
+// 	glBegin(GL_QUADS);
+// 		glTexCoord2d(0.0f, 1.0f); glVertex3f( len, -len, -len); 
+// 		glTexCoord2d(1.0f, 1.0f); glVertex3f(-len, -len, -len); 
+// 		glTexCoord2d(1.0f, 0.0f); glVertex3f(-len, len, -len); 
+// 		glTexCoord2d(0.0f, 0.0f); glVertex3f( len, len, -len); 
+// 	glEnd();
+//  	//Left face
+// 	glBegin(GL_QUADS);
+// 		glTexCoord2d(1.0f, 0.0f); glVertex3f(-len, len, -len); 
+// 		glTexCoord2d(1.0f, 1.0f); glVertex3f(-len, -len, -len); 
+// 		glTexCoord2d(0.0f, 1.0f); glVertex3f(-len, -len, len); 
+// 		glTexCoord2d(0.0f, 0.0f); glVertex3f(-len, len, len); 
+// 	glEnd();
+// 	//Right Face
+// 	glBegin(GL_QUADS);
+// 		glTexCoord2d(0.0f, 0.0f); glVertex3f( len, len, -len); 
+// 		glTexCoord2d(1.0f, 0.0f); glVertex3f( len, len, len); 
+// 		glTexCoord2d(1.0f, 1.0f); glVertex3f( len, -len, len); 
+// 		glTexCoord2d(0.0f, 1.0f); glVertex3f( len, -len, -len);
+// 	glEnd(); 
 
-	glPopMatrix();
-	glEndList();
+// 	glPopMatrix();
+// 	glEndList();
 
-	glBindTexture(GL_TEXTURE_CUBE_MAP, 0);
-	glDisable(GL_TEXTURE_CUBE_MAP);
-	glDisable(GL_TEXTURE_GEN_S);
-	glDisable(GL_TEXTURE_GEN_T);
-	glDisable(GL_TEXTURE_GEN_R);
-}
+// 	glBindTexture(GL_TEXTURE_CUBE_MAP, 0);
+// 	glDisable(GL_TEXTURE_CUBE_MAP);
+// 	glDisable(GL_TEXTURE_GEN_S);
+// 	glDisable(GL_TEXTURE_GEN_T);
+// 	glDisable(GL_TEXTURE_GEN_R);
+// }
 
-void G308_Geometry::SkyBox() {
-	glColor3f(1,1,1);
-	glEnable(GL_TEXTURE_CUBE_MAP);
-	glBindTexture(GL_TEXTURE_CUBE_MAP, environment);
-	glCallList(sky_box);
-	glDisable(GL_TEXTURE_CUBE_MAP);
-}
+// void G308_Geometry::SkyBox() {
+// 	glColor3f(1,1,1);
+	// glEnable(GL_TEXTURE_CUBE_MAP);
+	// glBindTexture(GL_TEXTURE_CUBE_MAP, environment);
+	// glCallList(sky_box);
+	// glDisable(GL_TEXTURE_CUBE_MAP);
+// }
 	
 void G308_Geometry::RenderGeometry(bool bunny) {
 
@@ -468,8 +468,8 @@ void G308_Geometry::RenderGeometry(bool bunny) {
 				glMaterialfv(GL_FRONT,GL_SHININESS,curProp.shininess);
 
 			glCallList(objects[i].m_glGeomListPoly);
-			glDisable(GL_TEXTURE_2D);
-			glDisable(GL_TEXTURE_CUBE_MAP);
+			// glDisable(GL_TEXTURE_2D);
+			// glDisable(GL_TEXTURE_CUBE_MAP);
 		}
 	} else if (mode == G308_SHADE_WIREFRAME) {
 		for (int i = 0; i < numObjects;++i){

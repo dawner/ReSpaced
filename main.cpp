@@ -8,7 +8,7 @@
 
 #include "define.h"
 #include "G308_Geometry.h"
-#include "G308_ImageLoader.h"
+// #include "G308_ImageLoader.h"
 #include <iostream>
 
 using namespace std;
@@ -50,7 +50,7 @@ void G308_keyboardListener(unsigned char, int, int);
 void G308_arrow_keys(int key, int x, int y);
 
 G308_Object_Properties G308_Object_Details(const char*);
-void load_textures(G308_Object_Properties*);
+// void load_textures(G308_Object_Properties*);
 int load_cubemap(char**);
 G308_Point normalise(G308_Point);
 G308_Point crossProduct(G308_Point p, G308_Point q);
@@ -113,12 +113,12 @@ int main(int argc, char** argv)
 	g_pGeometry = new G308_Geometry(numObjects);
 	
 	char* filenames[6] = {"right.jpg","left.jpg","bot.jpg","top.jpg","front.jpg","back.jpg"};
-	int environment = load_cubemap(filenames);
-	g_pGeometry->SetEnvironment(environment); 
-	g_pGeometry->SetupSkyBox();
+	// int environment = load_cubemap(filenames);
+	// g_pGeometry->SetEnvironment(environment); 
+	// g_pGeometry->SetupSkyBox();
 	for (int i = 0; i < numObjects;++i){
 		G308_Object_Properties props = G308_Object_Details(object_files[i]);
-		load_textures(&props);
+		// load_textures(&props);
 		g_pGeometry->ReadOBJ(i, object_files[i],props); // 1) read OBJ function
 		g_pGeometry->CreateGLPolyGeometry(i); // 2) create GL Geometry as polygon
 		g_pGeometry->CreateGLWireGeometry(i); // 3) create GL Geometry as wireframe
@@ -132,101 +132,101 @@ int main(int argc, char** argv)
     return 0;
 }
 
-int load_cubemap(char** filenames){
+// int load_cubemap(char** filenames){
 	
-	GLuint texName;
-	TextureInfo* t = (TextureInfo*) malloc(sizeof(TextureInfo)*6);
+// 	GLuint texName;
+// 	TextureInfo* t = (TextureInfo*) malloc(sizeof(TextureInfo)*6);
 
-	GLenum cube[6] = {  GL_TEXTURE_CUBE_MAP_POSITIVE_X,
-	                    GL_TEXTURE_CUBE_MAP_NEGATIVE_X,
-	                    GL_TEXTURE_CUBE_MAP_POSITIVE_Y,
-	                    GL_TEXTURE_CUBE_MAP_NEGATIVE_Y,
-	                    GL_TEXTURE_CUBE_MAP_POSITIVE_Z,
-	                    GL_TEXTURE_CUBE_MAP_NEGATIVE_Z };
+// 	GLenum cube[6] = {  GL_TEXTURE_CUBE_MAP_POSITIVE_X,
+// 	                    GL_TEXTURE_CUBE_MAP_NEGATIVE_X,
+// 	                    GL_TEXTURE_CUBE_MAP_POSITIVE_Y,
+// 	                    GL_TEXTURE_CUBE_MAP_NEGATIVE_Y,
+// 	                    GL_TEXTURE_CUBE_MAP_POSITIVE_Z,
+// 	                    GL_TEXTURE_CUBE_MAP_NEGATIVE_Z };
 
-    glEnable(GL_TEXTURE_CUBE_MAP);
-    glGenTextures(1, &texName);
-    glBindTexture(GL_TEXTURE_CUBE_MAP, texName);
-    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
+//     glEnable(GL_TEXTURE_CUBE_MAP);
+//     glGenTextures(1, &texName);
+//     glBindTexture(GL_TEXTURE_CUBE_MAP, texName);
+//     glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+//     glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+//     glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+//     glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+//     glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
 	
-    // Load Cube Map images
-    for(int j=0; j < 6; j++){
-		unsigned int k;
-		for (k = 0; k < strlen(filenames[j]); k++) {
-			if (filenames[j][k] == '.') {
-				break;
-			}
-		}
-		char extension[5];
-		strcpy(extension, &filenames[j][k + 1]);
-		if (strcmp(extension, "jpg") == 0 || strcmp(extension, "jpeg") == 0)
-			loadTextureFromJPEG(filenames[j], &(t[j]));
-		else if (strcmp(extension, "png") == 0)
-			loadTextureFromPNG(filenames[j], &(t[j]));
-		else {
-			printf("Invalid format. Only supports JPEG and PNG.\n");
-			exit(1);
-		}
-    	glTexImage2D(cube[j], 0, GL_RGB, t[j].width, t[j].height, 0, GL_RGB, GL_UNSIGNED_BYTE, t[j].textureData);
+//     // Load Cube Map images
+//     for(int j=0; j < 6; j++){
+// 		unsigned int k;
+// 		for (k = 0; k < strlen(filenames[j]); k++) {
+// 			if (filenames[j][k] == '.') {
+// 				break;
+// 			}
+// 		}
+// 		char extension[5];
+// 		strcpy(extension, &filenames[j][k + 1]);
+// 		if (strcmp(extension, "jpg") == 0 || strcmp(extension, "jpeg") == 0)
+// 			loadTextureFromJPEG(filenames[j], &(t[j]));
+// 		else if (strcmp(extension, "png") == 0)
+// 			loadTextureFromPNG(filenames[j], &(t[j]));
+// 		else {
+// 			printf("Invalid format. Only supports JPEG and PNG.\n");
+// 			exit(1);
+// 		}
+//     	glTexImage2D(cube[j], 0, GL_RGB, t[j].width, t[j].height, 0, GL_RGB, GL_UNSIGNED_BYTE, t[j].textureData);
 
-		free(t[j].textureData);
-    }
-	return texName  ;
-}
+// 		free(t[j].textureData);
+//     }
+// 	return texName  ;
+// }
 
-void load_textures(G308_Object_Properties* props){
+// void load_textures(G308_Object_Properties* props){
 
-	char* filename = props->texture_filename;
-	if (filename==NULL)
-		return; //no texture for this object
+// 	char* filename = props->texture_filename;
+// 	if (filename==NULL)
+// 		return; //no texture for this object
 	
-	GLuint texName;
-	TextureInfo t;
-	unsigned int i;
-	for (i = 0; i < strlen(filename); i++) {
-		if (filename[i] == '.') {
-			break;
-		}
-	}
-	char extension[5];
-	strcpy(extension, &filename[i + 1]);
+// 	GLuint texName;
+// 	TextureInfo t;
+// 	unsigned int i;
+// 	for (i = 0; i < strlen(filename); i++) {
+// 		if (filename[i] == '.') {
+// 			break;
+// 		}
+// 	}
+// 	char extension[5];
+// 	strcpy(extension, &filename[i + 1]);
 
-	if (strcmp(extension, "jpg") == 0 || strcmp(extension, "jpeg") == 0)
-		loadTextureFromJPEG(filename, &t);
-	else if (strcmp(extension, "png") == 0)
-		loadTextureFromPNG(filename, &t);
-	else {
-		printf("Invalid format. Only supports JPEG and PNG.\n");
-		exit(1);
-	}
+// 	if (strcmp(extension, "jpg") == 0 || strcmp(extension, "jpeg") == 0)
+// 		loadTextureFromJPEG(filename, &t);
+// 	else if (strcmp(extension, "png") == 0)
+// 		loadTextureFromPNG(filename, &t);
+// 	else {
+// 		printf("Invalid format. Only supports JPEG and PNG.\n");
+// 		exit(1);
+// 	}
 
-	glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
-	glGenTextures(1, &texName);
-	glBindTexture(GL_TEXTURE_2D, texName);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+// 	glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
+// 	glGenTextures(1, &texName);
+// 	glBindTexture(GL_TEXTURE_2D, texName);
+// 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+// 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+// 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+// 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
 
-	//Only useful for PNG files, since JPEG doesn't support alpha
-	if (t.hasAlpha) {
-		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, t.width, t.height, 0, GL_RGBA,
-				GL_UNSIGNED_BYTE, t.textureData);
-	} else {
-		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, t.width, t.height, 0, GL_RGB,
-				GL_UNSIGNED_BYTE, t.textureData);
-	}
-	//Once the texture has been loaded by GL, we don't need this anymore.
-	free(t.textureData);
+// 	//Only useful for PNG files, since JPEG doesn't support alpha
+// 	if (t.hasAlpha) {
+// 		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, t.width, t.height, 0, GL_RGBA,
+// 				GL_UNSIGNED_BYTE, t.textureData);
+// 	} else {
+// 		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, t.width, t.height, 0, GL_RGB,
+// 				GL_UNSIGNED_BYTE, t.textureData);
+// 	}
+// 	//Once the texture has been loaded by GL, we don't need this anymore.
+// 	free(t.textureData);
 
-	props->texture=texName;
-	props->has_alpha = t.hasAlpha;
+// 	props->texture=texName;
+// 	props->has_alpha = t.hasAlpha;
 
-}
+// }
 
 
 void set_material(float* property, float a, float b, float c, float d){
@@ -265,7 +265,7 @@ void G308_Display()
 
 		glMatrixMode(GL_MODELVIEW);
 
-		g_pGeometry->SkyBox();
+		// g_pGeometry->SkyBox();
 
 		glDisable(GL_DEPTH_TEST);
 		glDisable(GL_LIGHTING);
