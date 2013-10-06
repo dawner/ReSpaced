@@ -40,6 +40,18 @@ G308_Point camera_initial;
 G308_Point camera_change;
 G308_Spotlight spotlight;
 
+//Camera variables.
+G308_Point cam_position = {0.0, 0.0, 0.0};
+int arc_x = 0;
+int arc_y = 0;
+bool rotate = false;
+bool zoom = false;
+bool pan = false;
+int drag_x;
+int drag_y;
+float theta_x = 0.0;
+float theta_y = 0.0;
+
 void G308_Display() ;
 void G308_Reshape(int w, int h) ;
 void G308_SetCamera();
@@ -101,14 +113,14 @@ int main(int argc, char** argv)
 	spotlight.colour.g=0.4;
 	spotlight.colour.b=0.4;
 
-	G308_SetLight();
+	
 	camera_initial.x = 10;
 	camera_initial.y = 10;
 	camera_initial.z = 32;
 	camera_change.x = 0;
 	camera_change.y = 0;
 	camera_change.z = 0;
-	G308_SetCamera();
+	
 
 	g_pGeometry = new G308_Geometry(numObjects);
 	
@@ -125,6 +137,8 @@ int main(int argc, char** argv)
 	}
 	glDisable(GL_TEXTURE_2D);
 
+	G308_SetLight();
+	G308_SetCamera();
 	glutMainLoop();
 
 	if(g_pGeometry != NULL) delete g_pGeometry;
@@ -254,14 +268,22 @@ void G308_Display()
 		glColor3f(0,0,0);
 
 		glLoadIdentity();
-		G308_SetLight();
-		G308_SetCamera();
 
 		glMatrixMode(GL_MODELVIEW);
+		G308_SetCamera();
+		glPushMatrix();
+		//Camera changes.
+		glTranslatef(cam_position.x, cam_position.y, cam_position.z);
+		glRotatef(theta_x, 1.0, 0.0, 0.0);
+		glRotatef(theta_y, 0.0, 1.0, 0.0);
+
+		G308_SetLight();
+
 		glRotatef(cur_rotation.x,0,1,0);
 
 		g_pGeometry->RenderGeometry(false);
-		glRotatef(-cur_rotation.x,0,1,0);
+
+		glPopMatrix();
 
 		glMatrixMode(GL_MODELVIEW);
 
@@ -299,7 +321,7 @@ void G308_Reshape(int w, int h)
 // Set Light
 void G308_SetLight()
 {
-	glTranslatef(-camera_change.x,-camera_change.y,-camera_change.z);
+	//glTranslatef(-camera_change.x,-camera_change.y,-camera_change.z);
 
 	//--Point Light--//
 	float point_pos[] = {0.0f, 0.5f, 0.5f, 1.0f};
@@ -531,6 +553,20 @@ void G308_arrow_keys(int key, int x, int y){
 
 
 void updateMouse(int x, int y){
+	//Camera control.
+	if (rotating) {
+		theta_y += 1.0*(x - clickDown.x)/2.0;
+		theta_x += 1.0*(y - clickDown.y)/2.0;
+	}
+	else if (zooming) {
+		cam_position.z += (float) (y - clickDown.y)/10.0;
+	}
+	else if (panning) {
+		cam_position.x += (float) (x - clickDown.x)/20.0;
+		cam_position.y -= (float) (y - clickDown.y)/20.0;
+	}
+	glutPostRedisplay( );
+
 	if (modifier_key!=-1){ //see if key effects light position
 		float dir = 1;
 		if (x<clickDown.x){
@@ -574,9 +610,9 @@ void updateMouse(int x, int y){
 		}else if(modifier_key=='e'){ //exponent
 			spotlight.exponent = spotlight.exponent+1*dir;
 		}
-		clickDown.x=x;
-		clickDown.y=y;
 	}
+	clickDown.x=x;
+	clickDown.y=y;
 }
 
 
@@ -589,7 +625,8 @@ void G308_SetCamera()
 	glMatrixMode(GL_MODELVIEW);
 	glLoadIdentity();
 
-	gluLookAt(camera_initial.x+camera_change.x,camera_initial.y+camera_change.y, camera_initial.z+camera_change.z, -2.0, -1.5, 0.0, 0.0, 1.0, 0.0);
+	gluLookAt(0.0, 0.0, 50.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0);
+	//gluLookAt(camera_initial.x+camera_change.x,camera_initial.y+camera_change.y, camera_initial.z+camera_change.z, -2.0, -1.5, 0.0, 0.0, 1.0, 0.0);
 }
 
 //----------------OBJECT PROPERITES-----------------//

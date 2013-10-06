@@ -24,7 +24,6 @@ class G308_Geometry
 {
 private:
 
-
 	//Type to represent a object to be displayed
 	typedef struct figure {
 		const char* filename;
@@ -61,6 +60,9 @@ private:
 	int sky_box;
 
 public:
+
+	
+
 	G308_Geometry(int);
 	~G308_Geometry(void);
 
