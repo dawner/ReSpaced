@@ -8,11 +8,8 @@
 
 #include "define.h"
 #include "G308_Geometry.h"
-<<<<<<< HEAD
 #include "SculptObject.h"
-=======
 #include "ParticleSystem.h"
->>>>>>> 47e84f1a64851e5941c3524aae35e1b8931f298c
 // #include "G308_ImageLoader.h"
 #include <iostream>
 
@@ -134,13 +131,10 @@ int main(int argc, char** argv)
 	
 
 	g_pGeometry = new G308_Geometry(numObjects);
-<<<<<<< HEAD
 
 	sculpt = new SculptObject();
 	sculpt->ReadOBJ();
-=======
 	particle_system = new ParticleSystem(100);
->>>>>>> 47e84f1a64851e5941c3524aae35e1b8931f298c
 	
 	char* filenames[6] = {"right.jpg","left.jpg","bot.jpg","top.jpg","front.jpg","back.jpg"};
 	// int environment = load_cubemap(filenames);
