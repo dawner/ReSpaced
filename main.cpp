@@ -8,6 +8,7 @@
 
 #include "define.h"
 #include "G308_Geometry.h"
+#include "ParticleSystem.h"
 // #include "G308_ImageLoader.h"
 #include <iostream>
 
@@ -18,6 +19,7 @@ GLuint g_mainWnd;
 GLuint g_nWinWidth  = G308_WIN_WIDTH;
 GLuint g_nWinHeight = G308_WIN_HEIGHT;
 G308_Geometry* g_pGeometry = NULL;
+ParticleSystem* particle_system = NULL;
 const char** object_files;
 int numObjects = 6; 
 
@@ -95,6 +97,7 @@ int main(int argc, char** argv)
     g_mainWnd = glutCreateWindow("COMP308 Assignment4");
 
     glutDisplayFunc(G308_Display);
+    glutIdleFunc(G308_Display);
     glutReshapeFunc(G308_Reshape);
     glutMouseFunc(G308_mouseListener);
 	glutMotionFunc(updateMouse);
@@ -123,6 +126,7 @@ int main(int argc, char** argv)
 	
 
 	g_pGeometry = new G308_Geometry(numObjects);
+	particle_system = new ParticleSystem(100);
 	
 	char* filenames[6] = {"right.jpg","left.jpg","bot.jpg","top.jpg","front.jpg","back.jpg"};
 	// int environment = load_cubemap(filenames);
@@ -283,6 +287,10 @@ void G308_Display()
 
 		g_pGeometry->RenderGeometry(false);
 
+		//particle stuff
+		particle_system->CreateParticle();
+		particle_system->display();
+
 		glPopMatrix();
 
 		glMatrixMode(GL_MODELVIEW);
@@ -304,6 +312,8 @@ void G308_Display()
 				modifier_key=-1;
 			}
 		}
+
+		lastUpdate=currentTime;
 	}
 }
 
