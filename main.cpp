@@ -8,6 +8,7 @@
 
 #include "define.h"
 #include "G308_Geometry.h"
+#include "SculptObject.h"
 // #include "G308_ImageLoader.h"
 #include <iostream>
 
@@ -71,6 +72,10 @@ void set_material(float property[], float, float, float, float);
 void drawAxis(GLUquadric* q);
 void change_axis();
 
+//Sculpting variables.
+SculptObject *sculpt;
+bool sculpting = false;
+
 
 int main(int argc, char** argv)
 {
@@ -123,6 +128,9 @@ int main(int argc, char** argv)
 	
 
 	g_pGeometry = new G308_Geometry(numObjects);
+
+	sculpt = new SculptObject();
+	sculpt->ReadOBJ();
 	
 	char* filenames[6] = {"right.jpg","left.jpg","bot.jpg","top.jpg","front.jpg","back.jpg"};
 	// int environment = load_cubemap(filenames);
@@ -279,9 +287,11 @@ void G308_Display()
 
 		G308_SetLight();
 
-		glRotatef(cur_rotation.x,0,1,0);
+		//glRotatef(cur_rotation.x,0,1,0);
 
-		g_pGeometry->RenderGeometry(false);
+		//g_pGeometry->RenderGeometry(false);
+
+		sculpt->RenderGeometry(false);
 
 		glPopMatrix();
 
@@ -336,10 +346,10 @@ void G308_SetLight()
 
 	//--Direction Light--//
 	float direction[]	  = {0.5f, 1.0f, 1.0f, 0.0f};
-	float dir_intensity[] = {0.2f, 0.2f, 0.2f, 1.0f};
+	float dir_intensity[] = {0.8f, 0.8f, 0.8f, 1.0f};
 
 	glLightfv(GL_LIGHT1, GL_POSITION, direction);
-	glLightfv(GL_LIGHT1, GL_DIFFUSE,  point_intensity);
+	glLightfv(GL_LIGHT1, GL_DIFFUSE,  dir_intensity);
 	glLightfv(GL_LIGHT1, GL_SPECULAR,  dir_intensity);
 
 	glEnable(GL_LIGHT1);
@@ -501,35 +511,27 @@ void G308_keyboardListener(unsigned char key, int x, int y) {
 
 void G308_mouseListener(int button, int state, int x, int y){
 
-	if(button==GLUT_LEFT_BUTTON && state==GLUT_DOWN){
-		if(glutGetModifiers()==GLUT_ACTIVE_SHIFT){
-			clickDown.x=x;
-			clickDown.y=y;
+	rotating=false;
+	panning=false;
+	zooming=false;
+	sculpting = false;
+	clickDown.x=x;
+	clickDown.y=y;
+	if(glutGetModifiers()==GLUT_ACTIVE_SHIFT) {
+		if(button==GLUT_LEFT_BUTTON && state==GLUT_DOWN){
 			rotating=true;
-		}
-	}else if(button==GLUT_LEFT_BUTTON && state==GLUT_UP){
-		rotating=false;
-	}
-	else if(button==GLUT_RIGHT_BUTTON && state==GLUT_DOWN ){
-		if(glutGetModifiers()==GLUT_ACTIVE_SHIFT){
-			clickDown.x=x;
-			clickDown.y=y;
+		} 
+		else if(button==GLUT_RIGHT_BUTTON && state==GLUT_DOWN ){
 			panning=true;
-		}
-	}else if(button==GLUT_RIGHT_BUTTON && state==GLUT_UP){
-		panning=false;
-	}else if(button==GLUT_MIDDLE_BUTTON && state==GLUT_DOWN){
-		if(glutGetModifiers()==GLUT_ACTIVE_SHIFT){
-			clickDown.x=x;
-			clickDown.y=y;
+		}else if(button==GLUT_MIDDLE_BUTTON && state==GLUT_DOWN){
 			zooming=true;
 		}
-	}else if(button==GLUT_MIDDLE_BUTTON && state==GLUT_UP){
-		clickDown.x=x;
-		clickDown.y=y;
-		zooming=false;
 	}
-
+	else {
+		if (button==GLUT_LEFT_BUTTON && state==GLUT_DOWN) {
+			sculpting = true;
+		}
+	}
 	glutPostRedisplay();
 }
 
@@ -553,6 +555,24 @@ void G308_arrow_keys(int key, int x, int y){
 
 
 void updateMouse(int x, int y){
+	//Sculpting.
+	if (sculpting){
+
+		glPushMatrix();
+			glTranslatef(cam_position.x, cam_position.y, cam_position.z);
+			glRotatef(theta_x, 1.0, 0.0, 0.0);
+			glRotatef(theta_y, 0.0, 1.0, 0.0);
+
+			//Hold Alt to reverse direction.
+			if (glutGetModifiers() == GLUT_ACTIVE_ALT)
+				sculpt->MouseDrag(x, y, -0.02);
+			else
+				sculpt->MouseDrag(x, y, 0.02);
+			
+		
+		glPopMatrix();
+	}
+
 	//Camera control.
 	if (rotating) {
 		theta_y += 1.0*(x - clickDown.x)/2.0;
