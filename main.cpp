@@ -575,9 +575,9 @@ void updateMouse(int x, int y){
 
 			//Hold Alt to reverse direction.
 			if (glutGetModifiers() == GLUT_ACTIVE_ALT)
-				sculpt->MouseDrag(x, y, -0.02);
+				sculpt->MouseDrag(x, y, -0.00002);
 			else
-				sculpt->MouseDrag(x, y, 0.02);
+				sculpt->MouseDrag(x, y, 0.00002);
 			
 		
 		glPopMatrix();

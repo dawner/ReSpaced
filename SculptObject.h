@@ -28,9 +28,11 @@ public:
 	void ReadTexture(char* filename);
 
 	void MouseDrag(int x, int y, float strength);
+	void Sculpt(int poly, float strength, float distance);
 
 	void RenderGeometry(bool mode);     // mode : G308_SHADE_POLYGON, G308_SHADE_WIREFRAME
 	void calculateVertexNormal(int vertex);
+	float calculateDistance(int v1, int v2);
 	G308_Point calculateFaceNormal(int face);
 
 };
