@@ -2,6 +2,7 @@
 #include "define.h"
 #include <GL/glut.h>
 #include <vector>
+#include <set>
 
 class SculptObject
 {
@@ -12,6 +13,7 @@ private:
 	G308_Triangle* m_pTriangles;	// Triangle Array
 	G308_UVcoord* m_pUVArray;	    // Texture Coordinate Array
 	std::vector<int> *v_normal_faces;
+	std::set<int> edited_triangles;
 
 	// Data for Geoemetry
 	int m_nNumPoint;
@@ -28,7 +30,7 @@ public:
 	void ReadTexture(char* filename);
 
 	void MouseDrag(int x, int y, float strength);
-	void Sculpt(int poly, float strength, float distance);
+	void Sculpt(int poly, float strength, float max_dist, float cur_dist);
 
 	void RenderGeometry(bool mode);     // mode : G308_SHADE_POLYGON, G308_SHADE_WIREFRAME
 	void calculateVertexNormal(int vertex);

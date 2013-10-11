@@ -11,6 +11,7 @@ SculptObject::SculptObject(void) {
 	m_pTriangles = NULL;
 
 	v_normal_faces = NULL;
+	
 
 	m_nNumPoint = m_nNumUV = m_nNumPolygon = 0;
 }
@@ -226,53 +227,60 @@ void SculptObject::MouseDrag(int x, int y, float strength) {
 	glReadPixels(x, viewport[3] - y, 1, 1, GL_RGB, GL_UNSIGNED_BYTE, pixel);
 	if (pixel[0] + pixel[1] + pixel[2] != 0) {
 		int n = (pixel[0] - 1) + pixel[1] * 256 + pixel[2] * 65536;
-		Sculpt(n, strength, 5.0f);
+
+		edited_triangles.clear();
+		Sculpt(n, strength, 5.0f, 0.0f);
 		
 	}
 }
 
-void SculptObject::Sculpt(int poly, float strength, float distance){
-	if (distance > 0.0) {
-		m_pVertexArray[m_pTriangles[poly].v1].x += m_pNormalArray[m_pTriangles[poly].n1].x*strength;
-		m_pVertexArray[m_pTriangles[poly].v1].y += m_pNormalArray[m_pTriangles[poly].n1].y*strength;
-		m_pVertexArray[m_pTriangles[poly].v1].z += m_pNormalArray[m_pTriangles[poly].n1].z*strength;
+void SculptObject::Sculpt(int poly, float strength, float max_dist, float cur_dist){
+	if (cur_dist < max_dist) {
+		if (edited_triangles.count(poly) != 1) {
+			edited_triangles.insert(poly);
+			float cur_strength = strength * (1 - cur_dist/max_dist);
 
-		m_pVertexArray[m_pTriangles[poly].v2].x += m_pNormalArray[m_pTriangles[poly].n2].x*strength;
-		m_pVertexArray[m_pTriangles[poly].v2].y += m_pNormalArray[m_pTriangles[poly].n2].y*strength;
-		m_pVertexArray[m_pTriangles[poly].v2].z += m_pNormalArray[m_pTriangles[poly].n2].z*strength;
+			m_pVertexArray[m_pTriangles[poly].v1].x += m_pNormalArray[m_pTriangles[poly].n1].x*cur_strength;
+			m_pVertexArray[m_pTriangles[poly].v1].y += m_pNormalArray[m_pTriangles[poly].n1].y*cur_strength;
+			m_pVertexArray[m_pTriangles[poly].v1].z += m_pNormalArray[m_pTriangles[poly].n1].z*cur_strength;
 
-		m_pVertexArray[m_pTriangles[poly].v3].x += m_pNormalArray[m_pTriangles[poly].n3].x*strength;
-		m_pVertexArray[m_pTriangles[poly].v3].y += m_pNormalArray[m_pTriangles[poly].n3].y*strength;
-		m_pVertexArray[m_pTriangles[poly].v3].z += m_pNormalArray[m_pTriangles[poly].n3].z*strength;
+			m_pVertexArray[m_pTriangles[poly].v2].x += m_pNormalArray[m_pTriangles[poly].n2].x*cur_strength;
+			m_pVertexArray[m_pTriangles[poly].v2].y += m_pNormalArray[m_pTriangles[poly].n2].y*cur_strength;
+			m_pVertexArray[m_pTriangles[poly].v2].z += m_pNormalArray[m_pTriangles[poly].n2].z*cur_strength;
 
-		calculateVertexNormal(m_pTriangles[poly].n1);
-		calculateVertexNormal(m_pTriangles[poly].n2);
-		calculateVertexNormal(m_pTriangles[poly].n3);
+			m_pVertexArray[m_pTriangles[poly].v3].x += m_pNormalArray[m_pTriangles[poly].n3].x*cur_strength;
+			m_pVertexArray[m_pTriangles[poly].v3].y += m_pNormalArray[m_pTriangles[poly].n3].y*cur_strength;
+			m_pVertexArray[m_pTriangles[poly].v3].z += m_pNormalArray[m_pTriangles[poly].n3].z*cur_strength;
 
-		for (int i = 0; i < v_normal_faces[m_pTriangles[poly].v1].size(); i++){
-			int v1 = m_pTriangles[poly].v1;
-			int v2 = v_normal_faces[m_pTriangles[poly].v1][i];
-			if (v2 != v1) {
-				Sculpt(v2, strength, distance - calculateDistance(v1, v2)); 
+			calculateVertexNormal(m_pTriangles[poly].n1);
+			calculateVertexNormal(m_pTriangles[poly].n2);
+			calculateVertexNormal(m_pTriangles[poly].n3);
+
+			for (int i = 0; i < v_normal_faces[m_pTriangles[poly].v1].size(); i++){
+				int v1 = m_pTriangles[poly].v1;
+				int v2 = v_normal_faces[m_pTriangles[poly].v1][i];
+				if (v2 != v1) {
+					Sculpt(v2, strength, max_dist, cur_dist + calculateDistance(v1, v2)); 
+				}
 			}
-		}
 
-		for (int i = 0; i < v_normal_faces[m_pTriangles[poly].v2].size(); i++){
-			int v1 = m_pTriangles[poly].v2;
-			int v2 = v_normal_faces[m_pTriangles[poly].v2][i];
-			if (v2 != v1) {
-				Sculpt(v2, strength, distance - calculateDistance(v1, v2)); 
+			for (int i = 0; i < v_normal_faces[m_pTriangles[poly].v2].size(); i++){
+				int v1 = m_pTriangles[poly].v2;
+				int v2 = v_normal_faces[m_pTriangles[poly].v2][i];
+				if (v2 != v1) {
+					Sculpt(v2, strength, max_dist, cur_dist + calculateDistance(v1, v2)); 
+				}
 			}
-		}
 
-		for (int i = 0; i < v_normal_faces[m_pTriangles[poly].v3].size(); i++){
-			int v1 = m_pTriangles[poly].v3;
-			int v2 = v_normal_faces[m_pTriangles[poly].v3][i];
-			if (v2 != v1) {
-				Sculpt(v2, strength, distance - calculateDistance(v1, v2)); 
+			for (int i = 0; i < v_normal_faces[m_pTriangles[poly].v3].size(); i++){
+				int v1 = m_pTriangles[poly].v3;
+				int v2 = v_normal_faces[m_pTriangles[poly].v3][i];
+				if (v2 != v1) {
+					Sculpt(v2, strength, max_dist, cur_dist + calculateDistance(v1, v2)); 
+				}
 			}
-		}
 
+		}
 	}
 }
 
@@ -325,7 +333,7 @@ void SculptObject::RenderGeometry(bool mode) {
 	for (n = 0; n < m_nNumPolygon; n++){
 		if (mode) {
 			GLubyte pixel[3] = {n % 256, (n / 256) % 256, (n / 65536) % 256};
-			glColor3f((n % 256)/255.0f, ((n / 256) % 256)/255.0f, ((n / 65536) % 256)/255.0f);
+			glColor3f(((n+1) % 256)/255.0f, ((n / 256) % 256)/255.0f, ((n / 65536) % 256)/255.0f);
 		}
 		glBegin(GL_TRIANGLES);
 
