@@ -36,6 +36,7 @@ private:
 	int life_variation;
 	G308_RGBA colour;
 	G308_RGBA colour_variation;
+	G308_Vector dir_variation;
 
 	int total_particles; //maximum particle number from space allocated
 	int particle_count; //current number emitted
@@ -43,6 +44,7 @@ private:
 	Particle* particles; //list of all particles
 	Particle* last_particle;
 
+	float random();
 
 public:
 	ParticleSystem(int);
