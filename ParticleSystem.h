@@ -17,7 +17,9 @@ private:
 	typedef struct Particle {
 
 		G308_Point position;
+		G308_Point rotation;
 		G308_Vector direction;
+
 		int life;
 		G308_RGBA colour;
 
@@ -26,6 +28,8 @@ private:
 		Particle* prev;
 
 	} Particle;
+
+	float sun_radius;
 
 	//emitter variables
 	G308_Point emitter_position;
@@ -37,6 +41,7 @@ private:
 	G308_RGBA colour;
 	G308_RGBA colour_variation;
 	G308_Vector dir_variation;
+	G308_Point rot_variation;
 
 	int total_particles; //maximum particle number from space allocated
 	int particle_count; //current number emitted
@@ -45,6 +50,8 @@ private:
 	Particle* last_particle;
 
 	float random();
+	void updateParticle(Particle*);
+	Particle* removeDead(Particle*);
 
 public:
 	ParticleSystem(int);
@@ -52,7 +59,7 @@ public:
 
 	void CreateParticle();
 	void display();
-	void updateParticle(Particle*);
 
+	void killAll();
 
 };

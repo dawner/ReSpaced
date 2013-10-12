@@ -20,7 +20,6 @@ GLuint g_mainWnd;
 GLuint g_nWinWidth  = G308_WIN_WIDTH;
 GLuint g_nWinHeight = G308_WIN_HEIGHT;
 G308_Geometry* g_pGeometry = NULL;
-ParticleSystem* particle_system = NULL;
 const char** object_files;
 int numObjects = 6; 
 
@@ -78,6 +77,11 @@ void change_axis();
 SculptObject *sculpt;
 bool sculpting = false;
 
+//Particle System variables
+ParticleSystem* particle_system = NULL;
+int num_particles=800;
+int particles_per_frame=100;
+bool sun_active=false;
 
 int main(int argc, char** argv)
 {
@@ -134,7 +138,7 @@ int main(int argc, char** argv)
 
 	sculpt = new SculptObject();
 	sculpt->ReadOBJ();
-	particle_system = new ParticleSystem(100);
+	particle_system = new ParticleSystem(num_particles);
 	
 	char* filenames[6] = {"right.jpg","left.jpg","bot.jpg","top.jpg","front.jpg","back.jpg"};
 	// int environment = load_cubemap(filenames);
@@ -298,8 +302,13 @@ void G308_Display()
 		sculpt->RenderGeometry(false);
 
 		//particle stuff
-		particle_system->CreateParticle();
+		if (sun_active){
+			for(int i=0;i<particles_per_frame;++i){
+				particle_system->CreateParticle();
+			}
+		}
 		particle_system->display();
+	
 
 		glPopMatrix();
 
@@ -489,7 +498,11 @@ void change_axis(){
 void G308_keyboardListener(unsigned char key, int x, int y) {
 	//Code to respond to key events
 	if (key==13){
-		g_pGeometry->toggleMode();
+		if (sun_active){
+			sun_active=false;
+			particle_system->killAll();
+		}else
+			sun_active=true;
 	}
 	else if (key=='t'){ //start 360degree rotation
 		if (modifier_key=='t'){

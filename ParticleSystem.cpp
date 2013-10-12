@@ -16,6 +16,7 @@
 
 ParticleSystem::ParticleSystem(int num_particles) {
 	total_particles=num_particles;
+	sun_radius = 2;
 	//set up linked list of particles
 	particles = (Particle*) malloc(sizeof(Particle)*total_particles);
 	particles[0].prev=NULL;
@@ -32,22 +33,25 @@ ParticleSystem::ParticleSystem(int num_particles) {
 	emitter_position.y=0;
 	emitter_position.z=0;
 	global_force.x=0;
-	global_force.y=-.01;
+	global_force.y=0;
 	global_force.z=0;
-	speed=0.2;
-	speed_variation=0.1;
-	life=50; 
-	life_variation=10;
+	speed=1.0/100.0;
+	speed_variation=0.01;
+	life=30; 
+	life_variation=20;
 	colour.r=0.8;
 	colour.g=0.45;
 	colour.b=0;
 	colour_variation.r=0.2;
 	colour_variation.g=0.25;
 	colour_variation.b=0;
-	 //direction varies 90 degrees total around y axis
 	dir_variation.x=0.5;
 	dir_variation.y=0; 
 	dir_variation.z=0.5; 
+	rot_variation.x=180;
+	rot_variation.y=0;
+	rot_variation.z=180;
+
 
 	srand((unsigned)time(0)); 
 }
@@ -57,21 +61,31 @@ ParticleSystem::~ParticleSystem(void) {
 }
 
 void ParticleSystem::CreateParticle(){
-	if (particles==NULL && last_particle!=NULL && particle_count<total_particles){
-		return; //particle list is full
+	if (particles==NULL || particle_count==total_particles || (particle_count>0 && last_particle==NULL)){
+		return; //particle list has no space
 	}
+
 	Particle* p = particles; //next particle to be assigned particle 
 	particles=particles->next;
 
 	if (last_particle!=NULL)
 		last_particle->prev=p;
 	p->next=last_particle;
-	p->prev=NULL;
 	last_particle=p;
 
-	p->position.x=emitter_position.x;
-	p->position.y=emitter_position.y;
-	p->position.z=emitter_position.z;
+	p->position.x=0;
+	p->position.y=0;
+	p->position.z=0;
+	p->rotation.x=rot_variation.x*random();
+	// p->rotation.y=rot_variation.y*random();
+	p->rotation.z=rot_variation.z*random();
+
+	// p->position.x=emitter_position.x+(sun_radius*cos(360*random())*sin(360*random()));
+	// p->position.y=emitter_position.y+(sun_radius*sin(360*random())*sin(360*random()));
+	// p->position.z=emitter_position.z+(sun_radius*cos(360*random()));
+	// x = r * cos(s) * sin(t)
+	// y = r * sin(s) * sin(t)
+	// z = r * cos(t)
 
 	//direct straight up
 	float base_dir[] = {0,1,0}; //directly up
@@ -89,29 +103,53 @@ void ParticleSystem::CreateParticle(){
 	p->colour.b=colour.b+colour_variation.b*random();
 
 	p->life = life + life_variation*random();
-
 	++particle_count;
+
 }
 
-/* Retuns a random number between -1 and 1 */
-float ParticleSystem::random(){
-	return ((rand()%200)-100)/100.0;
-}
+
 
 //Render all particles and then update their positions
 void ParticleSystem::display(){
 	Particle* p = last_particle;
 	while(p!=NULL){
-		if (p->life>0){
-			glPushMatrix();
-				glTranslatef(p->position.x, p->position.y, p->position.z);
-				glColor3f(p->colour.r,p->colour.g,p->colour.b);
-				glutSolidSphere(0.05,10, 10);
-			glPopMatrix();
-			updateParticle(p);
-		}
+		glPushMatrix();
+			glTranslatef(emitter_position.x,emitter_position.y,emitter_position.z);
+			glRotatef(p->rotation.x,1,0,0);
+			glRotatef(p->rotation.z,0,0,1);
+			glTranslatef(0,sun_radius,0);
+			glTranslatef(p->position.x, p->position.y, p->position.z);
+			glColor3f(p->colour.r,p->colour.g,p->colour.b);
+			glutSolidSphere(0.05,10, 10);
+		glPopMatrix();
+		updateParticle(p);
 		p = p->next;
 	}
+	p = last_particle;
+	while(p!=NULL){
+		p=removeDead(p);	
+	}
+
+	//draw sun itself
+	glTranslatef(-6,0,0);
+	glColor3f(0.8,0.4,0);
+	glutSolidSphere(sun_radius,50, 50);
+}
+
+void ParticleSystem::killAll() {
+	particles[0].prev=NULL;
+	for (int i=1;i<total_particles;++i){
+		particles[i-1].next = &particles[i];
+		particles[i].prev = &particles[i-1];
+	}
+	particles[total_particles-1].next=NULL;
+	last_particle=NULL;
+	particle_count=0;
+}
+
+/* Retuns a random number between -1 and 1 */
+float ParticleSystem::random(){
+	return ((rand()%200)-100)/100.0;
 }
 
 void ParticleSystem::updateParticle(Particle* p) {
@@ -124,7 +162,12 @@ void ParticleSystem::updateParticle(Particle* p) {
 	p->direction.z+=global_force.z;
 
 	p->life-=1;
-	if (p->life==0){ //kill this particle
+			// printf("life=%d\n",p->life);
+}
+
+ParticleSystem::Particle* ParticleSystem::removeDead(Particle* p) {
+	Particle* next = p->next;
+	if (p->life<=0){ //kill this particle
 		if (p->prev!=NULL)
 			p->prev->next=p->next;
 		else
@@ -138,5 +181,6 @@ void ParticleSystem::updateParticle(Particle* p) {
 
 		particle_count--;
 	}
-
+	return next;
 }
+
