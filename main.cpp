@@ -79,8 +79,8 @@ bool sculpting = false;
 
 //Particle System variables
 ParticleSystem* particle_system = NULL;
-int num_particles=800;
-int particles_per_frame=100;
+int num_particles=3000;
+int particles_per_frame=300;
 bool sun_active=false;
 
 int main(int argc, char** argv)
@@ -307,7 +307,7 @@ void G308_Display()
 				particle_system->CreateParticle();
 			}
 		}
-		particle_system->display();
+		particle_system->display(theta_x,theta_y);
 	
 
 		glPopMatrix();

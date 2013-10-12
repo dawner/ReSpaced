@@ -17,6 +17,7 @@
 ParticleSystem::ParticleSystem(int num_particles) {
 	total_particles=num_particles;
 	sun_radius = 2;
+	particle_size=0.03;
 	//set up linked list of particles
 	particles = (Particle*) malloc(sizeof(Particle)*total_particles);
 	particles[0].prev=NULL;
@@ -40,18 +41,17 @@ ParticleSystem::ParticleSystem(int num_particles) {
 	life=30; 
 	life_variation=20;
 	colour.r=0.8;
-	colour.g=0.45;
+	colour.g=0.35;
 	colour.b=0;
 	colour_variation.r=0.2;
-	colour_variation.g=0.25;
+	colour_variation.g=0.15;
 	colour_variation.b=0;
 	dir_variation.x=0.5;
 	dir_variation.y=0; 
 	dir_variation.z=0.5; 
 	rot_variation.x=180;
 	rot_variation.y=0;
-	rot_variation.z=180;
-
+	rot_variation.z=90;
 
 	srand((unsigned)time(0)); 
 }
@@ -76,16 +76,8 @@ void ParticleSystem::CreateParticle(){
 	p->position.x=0;
 	p->position.y=0;
 	p->position.z=0;
-	p->rotation.x=rot_variation.x*random();
-	// p->rotation.y=rot_variation.y*random();
+	p->rotation.x=rot_variation.x*((rand()%100)/100.0); //only allow positive x rotation, to face camera
 	p->rotation.z=rot_variation.z*random();
-
-	// p->position.x=emitter_position.x+(sun_radius*cos(360*random())*sin(360*random()));
-	// p->position.y=emitter_position.y+(sun_radius*sin(360*random())*sin(360*random()));
-	// p->position.z=emitter_position.z+(sun_radius*cos(360*random()));
-	// x = r * cos(s) * sin(t)
-	// y = r * sin(s) * sin(t)
-	// z = r * cos(t)
 
 	//direct straight up
 	float base_dir[] = {0,1,0}; //directly up
@@ -104,24 +96,38 @@ void ParticleSystem::CreateParticle(){
 
 	p->life = life + life_variation*random();
 	++particle_count;
-
 }
 
-
-
 //Render all particles and then update their positions
-void ParticleSystem::display(){
+void ParticleSystem::display(float rot_x, float rot_y){
 	Particle* p = last_particle;
 	while(p!=NULL){
 		glPushMatrix();
 			glTranslatef(emitter_position.x,emitter_position.y,emitter_position.z);
+			
+			//reverse camera rotations, to keep particles on viewing side
+			glRotatef(-rot_y, 0.0, 1.0, 0.0);
+			glRotatef(-rot_x, 1.0, 0.0, 0.0);
+
 			glRotatef(p->rotation.x,1,0,0);
 			glRotatef(p->rotation.z,0,0,1);
 			glTranslatef(0,sun_radius,0);
 			glTranslatef(p->position.x, p->position.y, p->position.z);
 			glColor3f(p->colour.r,p->colour.g,p->colour.b);
-			glutSolidSphere(0.05,10, 10);
+			
+			//reverse particle rotations so billboards face camera
+			glRotatef(-p->rotation.z,0,0,1);
+			glRotatef(-p->rotation.x,1,0,0);
+
+			//draw square as billboard
+			glBegin(GL_QUADS);
+				glVertex3f(particle_size, particle_size, 0);
+				glVertex3f(-particle_size, particle_size, 0); 
+				glVertex3f(-particle_size, -particle_size, 0); 
+				glVertex3f(particle_size, -particle_size, 0); 
+			glEnd();
 		glPopMatrix();
+
 		updateParticle(p);
 		p = p->next;
 	}
@@ -129,13 +135,13 @@ void ParticleSystem::display(){
 	while(p!=NULL){
 		p=removeDead(p);	
 	}
-
 	//draw sun itself
 	glTranslatef(-6,0,0);
 	glColor3f(0.8,0.4,0);
 	glutSolidSphere(sun_radius,50, 50);
 }
 
+/* Resets particle list to blank */
 void ParticleSystem::killAll() {
 	particles[0].prev=NULL;
 	for (int i=1;i<total_particles;++i){
@@ -147,11 +153,14 @@ void ParticleSystem::killAll() {
 	particle_count=0;
 }
 
+/* ------- PRIVATE METHODS -------- */
+
 /* Retuns a random number between -1 and 1 */
 float ParticleSystem::random(){
 	return ((rand()%200)-100)/100.0;
 }
 
+/* Updates a particles position, direction and life */
 void ParticleSystem::updateParticle(Particle* p) {
 	p->position.x+=p->direction.x;
 	p->position.y+=p->direction.y;
@@ -162,9 +171,9 @@ void ParticleSystem::updateParticle(Particle* p) {
 	p->direction.z+=global_force.z;
 
 	p->life-=1;
-			// printf("life=%d\n",p->life);
 }
 
+/* Deletes an active particle, resetting prev/next pointers & global list pointers accordingly */
 ParticleSystem::Particle* ParticleSystem::removeDead(Particle* p) {
 	Particle* next = p->next;
 	if (p->life<=0){ //kill this particle

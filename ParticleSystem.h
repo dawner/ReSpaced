@@ -30,6 +30,7 @@ private:
 	} Particle;
 
 	float sun_radius;
+	float particle_size;
 
 	//emitter variables
 	G308_Point emitter_position;
@@ -58,7 +59,7 @@ public:
 	~ParticleSystem(void);
 
 	void CreateParticle();
-	void display();
+	void display(float,float);
 
 	void killAll();
 
