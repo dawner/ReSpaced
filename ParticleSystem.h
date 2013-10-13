@@ -23,6 +23,9 @@ private:
 		int life;
 		G308_RGBA colour;
 
+		bool is_flare;
+		G308_Point* past_positions;
+
 		//store links to particles on either side
 		Particle* next; 
 		Particle* prev;
@@ -47,10 +50,18 @@ private:
 	int total_particles; //maximum particle number from space allocated
 	int particle_count; //current number emitted
 
+	int flare_n; //every n particles is a flare
+	int flare_tail; //num of past positions to store for tail
+	G308_RGBA flare_colour;
+	G308_RGBA flare_colour_variation;
+
 	Particle* particles; //list of all particles
 	Particle* last_particle;
 
 	float random();
+	void positionParticle(Particle*, float, float);
+	void drawParticle(Particle*);
+	void drawFlare(Particle*);
 	void updateParticle(Particle*);
 	Particle* removeDead(Particle*);
 
