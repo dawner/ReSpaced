@@ -40,7 +40,6 @@ int lastUpdate = 0;
 
 G308_Point camera_initial;
 G308_Point camera_change;
-G308_Spotlight spotlight;
 
 //Camera variables.
 G308_Point cam_position = {0.0, 0.0, 0.0};
@@ -61,17 +60,11 @@ void G308_SetLight();
 void G308_mouseListener(int button, int state, int x, int y);
 void updateMouse(int, int);
 void G308_keyboardListener(unsigned char, int, int);
-void G308_arrow_keys(int key, int x, int y);
 
 G308_Object_Properties G308_Object_Details(const char*);
 // void load_textures(G308_Object_Properties*);
 int load_cubemap(char**);
-G308_Point normalise(G308_Point);
-G308_Point crossProduct(G308_Point p, G308_Point q);
-float dotProduct(G308_Point p, G308_Point q);
 void set_material(float property[], float, float, float, float);
-void drawAxis(GLUquadric* q);
-void change_axis();
 
 //Sculpting variables.
 SculptObject *sculpt;
@@ -111,21 +104,7 @@ int main(int argc, char** argv)
     glutMouseFunc(G308_mouseListener);
 	glutMotionFunc(updateMouse);
 	glutKeyboardFunc(G308_keyboardListener);
-	glutSpecialFunc(G308_arrow_keys); 
 
-	spotlight.direction.x = -0.05;
-	spotlight.direction.y = 0.02;
-	spotlight.direction.z = -0.27;
-	spotlight.position.x = 2;
-	spotlight.position.y = 0.5;
-	spotlight.position.z = -20;
-	spotlight.cutoff=15.0;
-	spotlight.exponent=2.0;
-	spotlight.colour.r=0.4;
-	spotlight.colour.g=0.4;
-	spotlight.colour.b=0.4;
-
-	
 	camera_initial.x = 10;
 	camera_initial.y = 10;
 	camera_initial.z = 32;
@@ -140,7 +119,7 @@ int main(int argc, char** argv)
 	sculpt->ReadOBJ();
 	particle_system = new ParticleSystem(num_particles);
 	
-	char* filenames[6] = {"right.jpg","left.jpg","bot.jpg","top.jpg","front.jpg","back.jpg"};
+	// char* filenames[6] = {"right.jpg","left.jpg","bot.jpg","top.jpg","front.jpg","back.jpg"};
 	// int environment = load_cubemap(filenames);
 	// g_pGeometry->SetEnvironment(environment); 
 	// g_pGeometry->SetupSkyBox();
@@ -281,7 +260,7 @@ void G308_Display()
 		glColorMaterial(GL_FRONT_AND_BACK, GL_AMBIENT_AND_DIFFUSE);
 		glEnable(GL_NORMALIZE); //ensure lighting is uneffected by scaling
 
-		glColor3f(0,0,0);
+		glColor3f(1,1,0.8);
 
 		glLoadIdentity();
 
@@ -297,7 +276,7 @@ void G308_Display()
 
 		//glRotatef(cur_rotation.x,0,1,0);
 
-		//g_pGeometry->RenderGeometry(false);
+		// g_pGeometry->RenderGeometry(false);
 
 		sculpt->RenderGeometry(false);
 
@@ -350,11 +329,9 @@ void G308_Reshape(int w, int h)
 // Set Light
 void G308_SetLight()
 {
-	//glTranslatef(-camera_change.x,-camera_change.y,-camera_change.z);
-
-	//--Point Light--//
-	float point_pos[] = {0.0f, 0.5f, 0.5f, 1.0f};
-	float point_intensity[] = {0.1f, 0.1f, 0.1f, 1.0f};
+	//--Point Light as Sun --//
+	float point_pos[] = {-6.0,0,0, 1.0f};
+	float point_intensity[] = {1, 0.8, 0.2, 1.0f};
 
 	glLightfv(GL_LIGHT0, GL_POSITION, point_pos);
 	glLightfv(GL_LIGHT0, GL_DIFFUSE,  point_intensity);
@@ -362,138 +339,12 @@ void G308_SetLight()
 
 	glEnable(GL_LIGHT0);
 
-
-	//--Direction Light--//
-	float direction[]	  = {0.5f, 1.0f, 1.0f, 0.0f};
-	float dir_intensity[] = {0.8f, 0.8f, 0.8f, 1.0f};
-
-	glLightfv(GL_LIGHT1, GL_POSITION, direction);
-	glLightfv(GL_LIGHT1, GL_DIFFUSE,  dir_intensity);
-	glLightfv(GL_LIGHT1, GL_SPECULAR,  dir_intensity);
-
-	glEnable(GL_LIGHT1);
-
-
-	//--Spotlight--//
-	float spot_pos[] = {spotlight.position.x,spotlight.position.y,spotlight.position.z,1.0f};
-	float spot_dir[] = {spotlight.direction.x,spotlight.direction.y,spotlight.direction.z, 0.0f};
-	float spotlight_colour[] = {spotlight.colour.r,spotlight.colour.g, spotlight.colour.b,1.0f};
-
-	glLightfv(GL_LIGHT2, GL_POSITION, spot_pos);
-	glLightfv(GL_LIGHT2, GL_SPOT_DIRECTION, spot_dir);
-	glLightf (GL_LIGHT2, GL_SPOT_CUTOFF,spotlight.cutoff);
-	glLightf(GL_LIGHT2, GL_SPOT_EXPONENT, spotlight.exponent);
-	glLightfv(GL_LIGHT2, GL_AMBIENT, spotlight_colour);
-	glEnable(GL_LIGHT2);
-	
-	glPushMatrix();
-
-	glTranslatef(spotlight.position.x,spotlight.position.y,spotlight.position.z);
-
-	GLUquadric* q = gluNewQuadric(); //Create a new quadric to allow you to draw cylinders
-	if (q == 0) {
-		printf("Not enough memory to allocate space to draw\n");
-		exit(EXIT_FAILURE);
-	}
-	if (modifier_key=='d' || modifier_key=='p')
-		drawAxis(q);
-
-	G308_Vector z_axis; //default cylinder direction
-	z_axis.x = 0;
-	z_axis.y = 0;
-	z_axis.z = 1;
-
-	G308_Vector axis; //cross product of dir and z = axis of rotation
-	axis.x = (z_axis.y * spotlight.direction.z) - (z_axis.z * spotlight.direction.y);
-	axis.y = (z_axis.z * spotlight.direction.x) - (z_axis.x * spotlight.direction.z);
-	axis.z = (z_axis.x * spotlight.direction.y) - (z_axis.y * spotlight.direction.x);
-
-	float dot_p = spotlight.direction.x*z_axis.x + spotlight.direction.y*z_axis.y + spotlight.direction.z*z_axis.z;
-	float dir_magnitude = sqrt( spotlight.direction.x*spotlight.direction.x +spotlight.direction.y*spotlight.direction.y + spotlight.direction.z*spotlight.direction.z );
-	float z_magnitude = sqrt( z_axis.x*z_axis.x + z_axis.y*z_axis.y + z_axis.z*z_axis.z );
-
-	float angle = 180 / PI * acos (dot_p/(dir_magnitude*z_magnitude)); //angle in degrees
-	glRotatef(angle,axis.x,axis.y,axis.z);
-
-	glColor3f(1,1,0.8);
-	glutSolidSphere(0.2,10, 10);
-
-	//draw direction arrow
-	glPushMatrix();
-		gluCylinder(q,0.05,0.05,2,5,5);
-		glTranslatef(0, 0, 2);
-		glutSolidCone(0.2, 0.3,5, 5);
-	glPopMatrix();
-
-	int num_lines = 6;
-	float angle_delta = 360.0/6;
-	if (modifier_key=='c')
-		glColor3f(1,1,0);
-	for (int i=0;i<num_lines;++i){
-		glPushMatrix();
-			glRotatef(spotlight.cutoff,-1,0,0);
-			gluCylinder(q,0.05,0.05,0.8,5,5);
-		glPopMatrix();
-		glRotatef(angle_delta,0,0,1);
-	}
-
-	glPopMatrix();
-
-	glTranslatef(camera_change.x,camera_change.y,camera_change.z);
-
 	//--ambient light--//
 	float ambient[] = {0.05f, 0.05f, 0.05f, 1.0f};
 	glLightfv(GL_LIGHT3, GL_AMBIENT,  ambient);
 	glEnable(GL_LIGHT3);
 }
 
-void drawAxis(GLUquadric* q){
-
-	//blue z axis 
-	glPushMatrix();
-		if (selected_axis==Z_AXIS)
-			glColor3f(1,1,0); 
-		else
-			glColor3f(0, 0, 1); 	
-		gluCylinder(q,0.05,0.05,1,5,5);
-		glTranslatef(0, 0, 1);
-		glutSolidCone(0.2, 0.2, 5, 5);
-	glPopMatrix();
-	//green y axis 
-	glPushMatrix();
-		if (selected_axis==Y_AXIS)
-			glColor3f(1,1,0); 
-		else
-			glColor3f(0, 1, 0); 	
-		glRotatef(-90.0f, 1.0f, 0.0f, 0.0f);
-		gluCylinder(q,0.05,0.05,1,5,5);
-		glTranslatef(0, 0, 1);
-		glutSolidCone(0.2, 0.2, 5, 5);
-	glPopMatrix();
-	//red x axis 
-	glPushMatrix();
-		if (selected_axis==X_AXIS)
-			glColor3f(1,1,0); 
-		else
-			glColor3f(1, 0, 0);
-		glRotatef(90.0f, 0.0f, 1.0f, 0.0f);
-		gluCylinder(q,0.05,0.05,1,5,5);
-		glTranslatef(0, 0, 1);
-		glutSolidCone(0.2, 0.2, 5, 5);
-	glPopMatrix();
-}
-
-//cycle through axis: X->Y->Z->X
-void change_axis(){
-	if (modifier_key!='d' && modifier_key!='p')
-		return;
-	if (selected_axis==X_AXIS)
-		selected_axis=Y_AXIS;
-	else if (selected_axis==Y_AXIS)
-		selected_axis=Z_AXIS;
-	else if (selected_axis==Z_AXIS)
-		selected_axis=X_AXIS;
-}
 
 void G308_keyboardListener(unsigned char key, int x, int y) {
 	//Code to respond to key events
@@ -504,32 +355,6 @@ void G308_keyboardListener(unsigned char key, int x, int y) {
 		}else
 			sun_active=true;
 	}
-	else if (key=='t'){ //start 360degree rotation
-		if (modifier_key=='t'){
-			rotation360=false;
-			modifier_key = -1;
-		}else{
-			rotation360=true;
-			modifier_key = key;
-		}
-	}else if (key=='x'){
-		change_axis();
-	}else{
-		if (key=='p' && modifier_key!='p'){
-			selected_axis=X_AXIS;
-			modifier_key = key;
-		}else if (key=='d' && modifier_key!='d'){
-			selected_axis=X_AXIS;
-			modifier_key = key;
-		}else if ((key=='c' && modifier_key!='c') || (key == 'e' && modifier_key!='e')){
-			modifier_key = key;
-		}else{
-			modifier_key=-1;
-		}
-	}
-
-	glutPostRedisplay();
-
 }
 
 void G308_mouseListener(int button, int state, int x, int y){
@@ -557,25 +382,6 @@ void G308_mouseListener(int button, int state, int x, int y){
 	}
 	glutPostRedisplay();
 }
-
-void G308_arrow_keys(int key, int x, int y){
-	if (key == GLUT_KEY_RIGHT){ //rotate right
-		cur_rotation.x = cur_rotation.x-5;
-	}
-	if (key == GLUT_KEY_LEFT){ //rotate left
-		cur_rotation.x = cur_rotation.x+5;
-	}
-
-	if (key == GLUT_KEY_UP){ //zoom in
-		camera_change.z=camera_change.z-1;
-	}
-	if (key == GLUT_KEY_DOWN){ //zoom out
-		camera_change.z=camera_change.z+1;
-
-	}
-
-}
-
 
 void updateMouse(int x, int y){
 	//Sculpting.
@@ -610,50 +416,7 @@ void updateMouse(int x, int y){
 	}
 	glutPostRedisplay( );
 
-	if (modifier_key!=-1){ //see if key effects light position
-		float dir = 1;
-		if (x<clickDown.x){
-			dir= dir*-1;
-		}
-		if(modifier_key=='p'){ //position
-			if (selected_axis==X_AXIS){
-				spotlight.position.x = spotlight.position.x+0.1*dir;
-			}else if (selected_axis==Y_AXIS){
-				spotlight.position.y = spotlight.position.y+0.1*dir*-1;
-			}else if (selected_axis==Z_AXIS){
-				spotlight.position.z = spotlight.position.z+0.1*dir;
-			}
-		}else if(modifier_key=='d'){ //direction
-			if (selected_axis==X_AXIS){
-				spotlight.direction.x = spotlight.direction.x+0.01*dir;
-				if (spotlight.direction.x<-1)
-					spotlight.direction.x=-1;
-				if (spotlight.direction.x>1)
-					spotlight.direction.x=1;
-			}else if (selected_axis==Y_AXIS){
-				spotlight.direction.y = spotlight.direction.y+0.01*dir*-1;
-				if (spotlight.direction.y<-1)
-					spotlight.direction.y=-1;
-				if (spotlight.direction.y>1)
-					spotlight.direction.y=1;
-			}else if (selected_axis==Z_AXIS){
-				spotlight.direction.z = spotlight.direction.z+0.01*dir;
-				if (spotlight.direction.z<-1)
-					spotlight.direction.z=-1;
-				if (spotlight.direction.z>1)
-					spotlight.direction.z=1;
-			}
-		}else if(modifier_key=='c'){ //cutoff angle
-			spotlight.cutoff = spotlight.cutoff+0.5*dir;
-			if (spotlight.cutoff >90)
-				spotlight.cutoff = 90;
-			if (spotlight.cutoff <0)
-				spotlight.cutoff = 0;
-			
-		}else if(modifier_key=='e'){ //exponent
-			spotlight.exponent = spotlight.exponent+1*dir;
-		}
-	}
+	
 	clickDown.x=x;
 	clickDown.y=y;
 }

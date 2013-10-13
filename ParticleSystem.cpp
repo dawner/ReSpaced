@@ -100,6 +100,8 @@ void ParticleSystem::CreateParticle(){
 
 //Render all particles and then update their positions
 void ParticleSystem::display(float rot_x, float rot_y){
+	glDisable(GL_LIGHTING);
+
 	Particle* p = last_particle;
 	while(p!=NULL){
 		glPushMatrix();
@@ -139,6 +141,8 @@ void ParticleSystem::display(float rot_x, float rot_y){
 	glTranslatef(-6,0,0);
 	glColor3f(0.8,0.4,0);
 	glutSolidSphere(sun_radius,50, 50);
+	glEnable(GL_LIGHTING);
+
 }
 
 /* Resets particle list to blank */
