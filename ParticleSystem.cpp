@@ -41,11 +41,11 @@ ParticleSystem::ParticleSystem(int num_particles) {
 	speed_variation=0.01;
 	life=30; 
 	life_variation=20;
-	colour.r=0.8;
-	colour.g=0.35;
+	colour.r=0.9;
+	colour.g=0.4;
 	colour.b=0;
-	colour_variation.r=0.2;
-	colour_variation.g=0.15;
+	colour_variation.r=0.1;
+	colour_variation.g=0.2;
 	colour_variation.b=0;
 	dir_variation.x=0.5;
 	dir_variation.y=0; 
@@ -55,10 +55,10 @@ ParticleSystem::ParticleSystem(int num_particles) {
 	rot_variation.z=90;
 
 	flare_n = 100;
-	flare_tail=20;
-	flare_colour.r=0.98;
-	flare_colour.g=0.12;
-	flare_colour_variation.r=0.02;
+	flare_tail=40;
+	flare_colour.r=0.95;
+	flare_colour.g=0.15;
+	flare_colour_variation.r=0.1;
 	flare_colour_variation.g=0.1;
 	flare_colour_variation.b=0;
 
@@ -98,7 +98,7 @@ void ParticleSystem::CreateParticle(){
 	if (particle_count%flare_n==0){ //should be made as flare!
 
 		//add a multiple of speed and random number between -1 and 1
-		float p_speed=(speed + speed_variation*random())*1.5;
+		float p_speed=(speed + speed_variation*random())*1.6;
 		p->direction.x=p->direction.x*p_speed;
 		p->direction.y=p->direction.y*p_speed;
 		p->direction.z=p->direction.z*p_speed;
@@ -107,7 +107,7 @@ void ParticleSystem::CreateParticle(){
 		p->colour.g=flare_colour.g+flare_colour_variation.g*random();
 		p->colour.b=flare_colour.b+flare_colour_variation.b*random();
 
-		p->life = (life + life_variation*random())*2.2;
+		p->life = (life + life_variation*random())*2.1;
 
 		p->is_flare=true;
 		p->past_positions=(G308_Point*) malloc(sizeof(G308_Point)*flare_tail);
