@@ -278,7 +278,7 @@ void G308_Display()
 
 		// g_pGeometry->RenderGeometry(false);
 
-		sculpt->RenderGeometry(false);
+		sculpt->RenderGeometry(2);
 
 		//particle stuff
 		if (sun_active){
@@ -330,7 +330,7 @@ void G308_Reshape(int w, int h)
 void G308_SetLight()
 {
 	//--Point Light as Sun --//
-	float point_pos[] = {-6.0,0,0, 1.0f};
+	float point_pos[] = {-6.0,0,0, 0.0f};
 	float point_intensity[] = {1, 0.8, 0.2, 1.0f};
 
 	glLightfv(GL_LIGHT0, GL_POSITION, point_pos);
@@ -394,9 +394,9 @@ void updateMouse(int x, int y){
 
 			//Hold Alt to reverse direction.
 			if (glutGetModifiers() == GLUT_ACTIVE_ALT)
-				sculpt->MouseDrag(x, y, -0.002);
+				sculpt->MouseDrag(x, y, -0.002, 2);
 			else
-				sculpt->MouseDrag(x, y, 0.002);
+				sculpt->MouseDrag(x, y, 0.002, 2);
 			
 		
 		glPopMatrix();
