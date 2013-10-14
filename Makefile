@@ -2,7 +2,7 @@
 # CC = g++
 # LPATH = -L/usr/pkg/lib -L/usr/local/libpng/lib 
 # LDPATH = -Wl,-R/usr/pkg/lib 
-#CFLAGS=-g -Wall 
+# CFLAGS=-g -Wall 
 # LIBS=-lGL -lGLU -lglut -ljpeg -lpng15 -lm
 # IPATH= -I/usr/pkg/include
 
@@ -14,7 +14,7 @@
 # LIBS=-lGL -lGLU -lglut -ljpeg -lpng15 -lm
 # IPATH= -I/usr/pkg/include
 
-# Windoze
+# Windows (Dawn)
 CC = g++
 LPATH = -L/usr/pkg/lib
 LDPATH = -Wl,-R/usr/pkg/lib
@@ -38,5 +38,5 @@ SculptObject.o:
 	$(CC) -c $(CFLAGS) SculptObject.cpp $(IPATH)
 clean :
 	rm -rf *.o
-	rm Retraced
-	rm Retraced.exe
+	rm -f Retraced
+	rm -f Retraced.exe
