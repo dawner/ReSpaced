@@ -61,7 +61,7 @@ ParticleSystem::ParticleSystem(int num_particles) {
 	flare_colour_variation.r=0.1;
 	flare_colour_variation.g=0.1;
 	flare_colour_variation.b=0;
-	int max_num_flares = 1+((total_particles-1)/flare_tail); //ceiling
+	int max_num_flares = 1+((total_particles-1)/flare_n); //ceiling
 	tails = (G308_Point**) malloc(sizeof(G308_Point*)*max_num_flares);
 	for (int i=0;i<max_num_flares;++i)
 		tails[i] = (G308_Point*) malloc(sizeof(G308_Point)*flare_tail);
@@ -80,11 +80,9 @@ void ParticleSystem::CreateParticle(){
 	}
 
 	Particle* p = particles; //next particle to be assigned 
+	// printf("created %d\n", &(*p));
 	particles=particles->next;
 
-	if (last_particle!=NULL)
-		last_particle->prev=p;
-	p->next=last_particle;
 	last_particle=p;
 
 	p->position.x=0;
@@ -115,7 +113,7 @@ void ParticleSystem::CreateParticle(){
 		p->is_flare=true;
 		p->past_positions=tails[tail_pointer];
 		tail_pointer+=1;
-		int max_num_flares = 1+((total_particles-1)/flare_tail); //ceiling
+		int max_num_flares = 1+((total_particles-1)/flare_n); //ceiling
 		if (tail_pointer==max_num_flares)
 			tail_pointer=0;
 		for(int i=0;i<flare_tail;++i){
@@ -140,6 +138,7 @@ void ParticleSystem::CreateParticle(){
 		p->past_positions=NULL;
 	}
 	++particle_count;
+
 }
 
 
@@ -168,7 +167,7 @@ void ParticleSystem::display(float rot_x, float rot_y){
 		glPopMatrix();
 
 		updateParticle(p);
-		p = p->next;
+		p = p->prev;
 	}
 	p = last_particle;
 	while(p!=NULL){
@@ -180,14 +179,10 @@ void ParticleSystem::display(float rot_x, float rot_y){
 
 /* Resets particle list to blank */
 void ParticleSystem::killAll() {
-	particles[0].prev=NULL;
-	for (int i=1;i<total_particles;++i){
-		particles[i-1].next = &particles[i];
-		particles[i].prev = &particles[i-1];
+	while(last_particle!=NULL){
+		last_particle->life=0;
+		removeDead(last_particle);
 	}
-	particles[total_particles-1].next=NULL;
-	last_particle=NULL;
-	particle_count=0;
 }
 
 /* ------- PRIVATE METHODS -------- */
@@ -281,21 +276,36 @@ void ParticleSystem::updateParticle(Particle* p) {
 
 /* Deletes an active particle, resetting prev/next pointers & global list pointers accordingly */
 ParticleSystem::Particle* ParticleSystem::removeDead(Particle* p) {
-	Particle* next = p->next;
-	if (p->life<=0){ //kill this particle
-		if (p->prev!=NULL)
-			p->prev->next=p->next;
-		else
-			last_particle=p->next;
+	Particle* prev = p->prev;
+	if (p->life<=0){ 
+			// printf("removing %d\n",&(*p));
 
-		if (p->next!=NULL)
-			p->next->prev=p->prev;
+		if (&(*last_particle)==&(*p)){ //removing last particle
+			last_particle=p->prev;
 
-		p->next=particles;
+		}else{	
+			//remove p from current position
+			// printf("next %d\n",&(*p->next));
+			// printf("prev %d\n",&(*p->prev));
+			if (p->prev!=NULL)
+				p->prev->next=p->next;
+			if (p->next!=NULL)
+				p->next->prev=p->prev;
+			// printf("af next %d\n",&(*p->next));
+			// printf("af prev %d\n",&(*p->prev));
+
+			//move p into position before particles
+			p->next=particles;
+			p->prev=last_particle;
+			if (last_particle!=NULL)	
+				last_particle->next=p;
+			if (particles!=NULL)
+				particles->prev=p;
+		}
+
 		particles=p;
-
 		particle_count--;
 	}
-	return next;
+	return prev;
 }
 
