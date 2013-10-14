@@ -54,6 +54,8 @@ private:
 	int flare_tail; //num of past positions to store for tail
 	G308_RGBA flare_colour;
 	G308_RGBA flare_colour_variation;
+	G308_Point** tails; //pre-allocated memory for the flare tails
+	int tail_pointer;
 
 	Particle* particles; //list of all particles
 	Particle* last_particle;
