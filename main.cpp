@@ -10,6 +10,7 @@
 #include "G308_Geometry.h"
 #include "SculptObject.h"
 #include "ParticleSystem.h"
+#include "CollisionSystem.h"
 // #include "G308_ImageLoader.h"
 #include <iostream>
 
@@ -21,7 +22,7 @@ GLuint g_nWinWidth  = G308_WIN_WIDTH;
 GLuint g_nWinHeight = G308_WIN_HEIGHT;
 G308_Geometry* g_pGeometry = NULL;
 const char** object_files;
-int numObjects = 6; 
+int numObjects = 1;
 
 bool rotating=false;
 bool panning = false;
@@ -83,6 +84,9 @@ int num_particles=3000;
 int particles_per_frame=300;
 bool sun_active=false;
 
+// Collision System pointer
+CollisionSystem* collision_system = NULL;
+
 int main(int argc, char** argv)
 {
 	//assign static objects to be displayed
@@ -92,11 +96,6 @@ int main(int argc, char** argv)
 		object_files[i] = (const char*) malloc(20*sizeof(char)); //assuming filename length of 20 max
 	}
 	object_files[0]="Sphere.obj";
-	object_files[1]="Torus.obj";
-	object_files[2]="Teapot.obj";
-	object_files[3]="Box.obj";
-	object_files[4]="Table.obj";
-	object_files[5]="Bunny.obj";
 
 	modifier_key=-1;
 
@@ -126,6 +125,7 @@ int main(int argc, char** argv)
 	sculpt = new SculptObject();
 	sculpt->ReadOBJ();
 	particle_system = new ParticleSystem(num_particles);
+	collision_system = new CollisionSystem();
 	glutCreateMenu(colourMenu);
 	glutAddMenuEntry("Red", 0);
 	glutAddMenuEntry("Orange", 1);
@@ -318,6 +318,7 @@ void G308_Display()
 				}
 			}
 			particle_system->display(theta_x,theta_y);
+			collision_system->step();
 	
 		}
 		glPopMatrix();

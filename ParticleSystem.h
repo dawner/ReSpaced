@@ -58,6 +58,9 @@ private:
 	Particle* particles; //list of all particles
 	Particle* last_particle;
 
+	G308_Point** tails;
+	int tail_pointer;
+
 	float random();
 	void positionParticle(Particle*, float, float);
 	void drawParticle(Particle*);
