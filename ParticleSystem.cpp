@@ -61,6 +61,11 @@ ParticleSystem::ParticleSystem(int num_particles) {
 	flare_colour_variation.r=0.1;
 	flare_colour_variation.g=0.1;
 	flare_colour_variation.b=0;
+	int max_num_flares = 1+((total_particles-1)/flare_tail); //ceiling
+	tails = (G308_Point**) malloc(sizeof(G308_Point*)*max_num_flares);
+	for (int i=0;i<max_num_flares;++i)
+		tails[i] = (G308_Point*) malloc(sizeof(G308_Point)*flare_tail);
+	tail_pointer=0;
 
 	srand((unsigned)time(0)); 
 }
@@ -74,7 +79,7 @@ void ParticleSystem::CreateParticle(){
 		return; //particle list has no space
 	}
 
-	Particle* p = particles; //next particle to be assigned particle 
+	Particle* p = particles; //next particle to be assigned 
 	particles=particles->next;
 
 	if (last_particle!=NULL)
@@ -88,7 +93,6 @@ void ParticleSystem::CreateParticle(){
 	p->rotation.x=rot_variation.x*((rand()%100)/100.0); //only allow positive x rotation, to face camera
 	p->rotation.z=rot_variation.z*random();
 
-	//direct straight up
 	float base_dir[] = {0,1,0}; //directly up
 	p->direction.x=base_dir[0]+dir_variation.x*random();
 	p->direction.y=base_dir[1]+dir_variation.y*random();
@@ -97,7 +101,6 @@ void ParticleSystem::CreateParticle(){
 
 	if (particle_count%flare_n==0){ //should be made as flare!
 
-		//add a multiple of speed and random number between -1 and 1
 		float p_speed=(speed + speed_variation*random())*1.6;
 		p->direction.x=p->direction.x*p_speed;
 		p->direction.y=p->direction.y*p_speed;
@@ -107,19 +110,22 @@ void ParticleSystem::CreateParticle(){
 		p->colour.g=flare_colour.g+flare_colour_variation.g*random();
 		p->colour.b=flare_colour.b+flare_colour_variation.b*random();
 
-		p->life = (life + life_variation*random())*2.1;
+		p->life = (life*2.8 + life_variation*random());
 
 		p->is_flare=true;
-		p->past_positions=(G308_Point*) malloc(sizeof(G308_Point)*flare_tail);
+		p->past_positions=tails[tail_pointer];
+		tail_pointer+=1;
+		int max_num_flares = 1+((total_particles-1)/flare_tail); //ceiling
+		if (tail_pointer==max_num_flares)
+			tail_pointer=0;
 		for(int i=0;i<flare_tail;++i){
 			p->past_positions[i].x=0;
 			p->past_positions[i].y=0;
 			p->past_positions[i].z=0;
 		}
 
-	}else{ //normal fire particle
+	}else{ //normal plasma particle
 
-		//add a multiple of speed and random number between -1 and 1
 		float p_speed=speed + speed_variation*random();
 		p->direction.x=p->direction.x*p_speed;
 		p->direction.y=p->direction.y*p_speed;
@@ -214,7 +220,7 @@ void ParticleSystem::positionParticle(Particle* p, float rot_x, float rot_y){
 /* Draw the actual particle shape               */
 void ParticleSystem::drawParticle(Particle* p){
 	if (p->is_flare)
-		glutSolidSphere(0.06,10, 10);
+		glutSolidSphere(particle_size*2.0,10, 10);
 	else{
 		//draw square as billboard
 		glBegin(GL_QUADS);
@@ -237,7 +243,7 @@ void ParticleSystem::drawFlare(Particle* p){
 		glRotatef(-p->rotation.z,0,0,1);
 		glRotatef(-p->rotation.x,1,0,0);
 
-		glutSolidSphere(0.06,5, 5);
+		glutSolidSphere(particle_size*2.0,5, 5);
 
 		glRotatef(p->rotation.x,1,0,0);
 		glRotatef(p->rotation.z,0,0,1);
