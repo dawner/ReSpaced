@@ -25,11 +25,31 @@ SculptObject::SculptObject(void) {
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
 
 	for (int i = 0; i < (width*height*3)-2; i+=3){
-		texture[i] = ((i+1) % 256)/255.0f;
-		texture[i+1] = ((i / 256) % 256)/255.0f;
-		texture[i+2] = ((i / 65536) % 256)/255.0f;
+		pixels[i] = ((i+1) % 256)/255.0f;
+		pixels[i+1] = ((i / 256) % 256)/255.0f;
+		pixels[i+2] = ((i / 65536) % 256)/255.0f;
+	}
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RGB, GL_FLOAT, pixels);
+
+	//Texture for displaying.
+	glGenTextures(1, &display_texture);
+	glBindTexture(GL_TEXTURE_2D, display_texture);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+
+	for (int i = 0; i < (width*height*3)-2; i+=3){
+		texture[i] = 255;
+		texture[i+1] = 255;
+		texture[i+2] = 255;
 	}
 	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RGB, GL_FLOAT, texture);
+
+	current_colour[0] = 0.0f;
+	current_colour[1] = 0.0f;
+	current_colour[2] = 0.0f;
+	current_colour[3] = 0.5f;
 }
 
 SculptObject::~SculptObject(void) {
@@ -237,7 +257,7 @@ void SculptObject::ReadOBJ() {
 }*/
 
 
-void SculptObject::MouseDrag(int x, int y, float strength, int mode) {
+void SculptObject::MouseDrag(int x, int y, float strength, float distance, int mode) {
 
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 	glDisable(GL_FOG);
@@ -252,15 +272,14 @@ void SculptObject::MouseDrag(int x, int y, float strength, int mode) {
 	glGetIntegerv(GL_VIEWPORT, viewport);
 	glReadPixels(x, viewport[3] - y, 1, 1, GL_RGB, GL_UNSIGNED_BYTE, pixel);
 	if (pixel[0] + pixel[1] + pixel[2] != 0) {
-		printf("pixel: %d, %d, %d\n", pixel[0], pixel[1], pixel[2]);
 		int n = (pixel[0] - 1) + pixel[1] * 256 + pixel[2] * 65536;
 
 		if (mode == 1) {
 			edited_triangles.clear();
-			Sculpt(n, strength, 10.0f, 0.0f);
+			Sculpt(n, strength, distance, 0.0f);
 		}
 		else if (mode == 2) {
-			Paint(n);
+			Paint(n, distance);
 		}
 		
 	}
@@ -316,11 +335,22 @@ void SculptObject::Sculpt(int poly, float strength, float max_dist, float cur_di
 	}
 }
 
-void SculptObject::Paint(int pixel){
-	texture[pixel] = 0.0f;
-	texture[pixel+1] = 0.0f;
-	texture[pixel+2] = 0.0f;
-	glBindTexture(GL_TEXTURE_2D, pick_texture);
+void SculptObject::Paint(int pixel, float distance){
+	for (int x = -distance; x < distance; x++){
+		for (int y = -distance; y < distance; y++){
+			if (sqrt(x*x + y*y) < distance){
+				int pos = pixel + (x*3) + (y*3*width);
+				texture[pos] = current_colour[0]*current_colour[3] + texture[pos]*(1-current_colour[3]);
+				texture[pos + 1] = current_colour[1]*current_colour[3] + texture[pos+1]*(1-current_colour[3]);
+				texture[pos + 2] = current_colour[2]*current_colour[3] + texture[pos+2]*(1-current_colour[3]);
+			}
+		}
+		
+	}
+	//texture[pixel] = 0.0f;
+	//texture[pixel+1] = 0.0f;
+	//texture[pixel+2] = 0.0f;
+	glBindTexture(GL_TEXTURE_2D, display_texture);
 	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RGB, GL_FLOAT, texture);
 }
 
@@ -374,19 +404,22 @@ void SculptObject::RenderGeometry(int mode) {
 			glBindTexture(GL_TEXTURE_2D, pick_texture);
 			glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_COLOR, GL_REPLACE);
 
-			GLfloat zPlane[] = { 0.0f, 0.0f, 1.0f, 0.0f };
-
-			glTexGeni(GL_S, GL_TEXTURE_GEN_MODE, GL_OBJECT_LINEAR);
-			glTexGeni(GL_T, GL_TEXTURE_GEN_MODE, GL_OBJECT_LINEAR);
+			//glTexGeni(GL_S, GL_TEXTURE_GEN_MODE, GL_OBJECT_LINEAR);
+			//glTexGeni(GL_T, GL_TEXTURE_GEN_MODE, GL_OBJECT_LINEAR);
 			//glTexGenfv(GL_S, GL_OBJECT_PLANE, zPlane);
            // glTexGenfv(GL_T, GL_OBJECT_PLANE, zPlane);
 			//glTexGeni(GL_R, GL_TEXTURE_GEN_MODE, GL_OBJECT_LINEAR);
 			//glTexGeni(GL_Q, GL_TEXTURE_GEN_MODE, GL_OBJECT_LINEAR);
 
-			glEnable(GL_TEXTURE_GEN_S);
-			glEnable(GL_TEXTURE_GEN_T);
+			//glEnable(GL_TEXTURE_GEN_S);
+			//glEnable(GL_TEXTURE_GEN_T);
 			//glEnable(GL_TEXTURE_GEN_R);
 			//glEnable(GL_TEXTURE_GEN_Q);
+	}
+	else if (mode == 0) {
+		glEnable(GL_TEXTURE_2D);
+		glBindTexture(GL_TEXTURE_2D, display_texture);
+		glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_COLOR, GL_REPLACE);
 	}
 	int n;
 	for (n = 0; n < m_nNumPolygon; n++){
@@ -395,15 +428,15 @@ void SculptObject::RenderGeometry(int mode) {
 		}
 		glBegin(GL_TRIANGLES);
 
-				//glTexCoord2f(m_pUVArray[m_pTriangles[n].t1].u, m_pUVArray[m_pTriangles[n].t1].v);
+				glTexCoord2f(m_pUVArray[m_pTriangles[n].t1].u, m_pUVArray[m_pTriangles[n].t1].v);
 				glNormal3f(m_pNormalArray[m_pTriangles[n].n1].x, m_pNormalArray[m_pTriangles[n].n1].y, m_pNormalArray[m_pTriangles[n].n1].z);
 				glVertex3f(m_pVertexArray[m_pTriangles[n].v1].x, m_pVertexArray[m_pTriangles[n].v1].y, m_pVertexArray[m_pTriangles[n].v1].z);
 
-				//glTexCoord2f(m_pUVArray[m_pTriangles[n].t2].u, m_pUVArray[m_pTriangles[n].t2].v);
+				glTexCoord2f(m_pUVArray[m_pTriangles[n].t2].u, m_pUVArray[m_pTriangles[n].t2].v);
 				glNormal3f(m_pNormalArray[m_pTriangles[n].n2].x, m_pNormalArray[m_pTriangles[n].n2].y, m_pNormalArray[m_pTriangles[n].n2].z);
 				glVertex3f(m_pVertexArray[m_pTriangles[n].v2].x, m_pVertexArray[m_pTriangles[n].v2].y, m_pVertexArray[m_pTriangles[n].v2].z);
 
-				//glTexCoord2f(m_pUVArray[m_pTriangles[n].t3].u, m_pUVArray[m_pTriangles[n].t3].v);
+				glTexCoord2f(m_pUVArray[m_pTriangles[n].t3].u, m_pUVArray[m_pTriangles[n].t3].v);
 				glNormal3f(m_pNormalArray[m_pTriangles[n].n3].x, m_pNormalArray[m_pTriangles[n].n3].y, m_pNormalArray[m_pTriangles[n].n3].z);
 				glVertex3f(m_pVertexArray[m_pTriangles[n].v3].x, m_pVertexArray[m_pTriangles[n].v3].y, m_pVertexArray[m_pTriangles[n].v3].z);
 

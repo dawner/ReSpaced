@@ -22,23 +22,27 @@ private:
 	int m_nNumNormal;
 	int m_nNumPolygon;
 
-	//Pixel selecting texture.
-	static const int width = 128;
-	static const int height = 128;
+	//Texture stuff.
+	static const int width = 1024;
+	static const int height = 1024;
+	float pixels[width*height*3];
 	float texture[width*height*3];
 	GLuint pick_texture;
+	GLuint display_texture;
 
 
 public:
+	float current_colour[4];
+
 	SculptObject(void);
 	~SculptObject(void);
 
 	void ReadOBJ();
 	void ReadTexture(char* filename);
 
-	void MouseDrag(int x, int y, float strength, int mode);
+	void MouseDrag(int x, int y, float strength, float distance, int mode);
 	void Sculpt(int poly, float strength, float max_dist, float cur_dist);
-	void Paint(int pixel);
+	void Paint(int pixel, float distance);
 
 	void RenderGeometry(int mode);     // mode : G308_SHADE_POLYGON, G308_SHADE_WIREFRAME
 	void calculateVertexNormal(int vertex);
