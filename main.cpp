@@ -67,8 +67,15 @@ int load_cubemap(char**);
 void set_material(float property[], float, float, float, float);
 
 //Sculpting variables.
+bool sculpt_mode = true;
 SculptObject *sculpt;
 bool sculpting = false;
+int tool = 1;
+float sculpt_str = 0.001f;
+float sculpt_dist = 5.0f;
+
+void SculptingLight();
+void colourMenu(int);
 
 //Particle System variables
 ParticleSystem* particle_system = NULL;
@@ -115,9 +122,24 @@ int main(int argc, char** argv)
 
 	g_pGeometry = new G308_Geometry(numObjects);
 
+	//Sculpt stuff.
 	sculpt = new SculptObject();
 	sculpt->ReadOBJ();
 	particle_system = new ParticleSystem(num_particles);
+	glutCreateMenu(colourMenu);
+	glutAddMenuEntry("Red", 0);
+	glutAddMenuEntry("Orange", 1);
+	glutAddMenuEntry("Yellow", 2);
+	glutAddMenuEntry("Green", 3);
+	glutAddMenuEntry("Light Green", 4);
+	glutAddMenuEntry("Blue", 5);
+	glutAddMenuEntry("Light Blue", 6);
+	glutAddMenuEntry("Dark Brown", 7);
+	glutAddMenuEntry("Light Brown", 8);
+	glutAddMenuEntry("Black", 9);
+	glutAddMenuEntry("White", 10);
+	glutAttachMenu(GLUT_RIGHT_BUTTON);
+	
 	
 	// char* filenames[6] = {"right.jpg","left.jpg","bot.jpg","top.jpg","front.jpg","back.jpg"};
 	// int environment = load_cubemap(filenames);
@@ -267,28 +289,37 @@ void G308_Display()
 		glMatrixMode(GL_MODELVIEW);
 		G308_SetCamera();
 		glPushMatrix();
-		//Camera changes.
+
+		if (sculpt_mode)
+			SculptingLight();
+
 		glTranslatef(cam_position.x, cam_position.y, cam_position.z);
 		glRotatef(theta_x, 1.0, 0.0, 0.0);
 		glRotatef(theta_y, 0.0, 1.0, 0.0);
-
-		G308_SetLight();
 
 		//glRotatef(cur_rotation.x,0,1,0);
 
 		// g_pGeometry->RenderGeometry(false);
 
-		sculpt->RenderGeometry(0);
-
-		//particle stuff
-		if (sun_active){
-			for(int i=0;i<particles_per_frame;++i){
-				particle_system->CreateParticle();
-			}
+		//Sculpting mode stuff goes in here.
+		if (sculpt_mode) {
+			sculpt->RenderGeometry(0);
 		}
-		particle_system->display(theta_x,theta_y);
-	
+		//Everything else goes in here.
+		else {
+			//Camera changes.
+			G308_SetLight();
 
+
+			//particle stuff
+			if (sun_active){
+				for(int i=0;i<particles_per_frame;++i){
+					particle_system->CreateParticle();
+				}
+			}
+			particle_system->display(theta_x,theta_y);
+	
+		}
 		glPopMatrix();
 
 		glMatrixMode(GL_MODELVIEW);
@@ -326,13 +357,52 @@ void G308_Reshape(int w, int h)
     glViewport(0, 0, g_nWinWidth, g_nWinHeight);
 }
 
+void SculptingLight(){
+	float point_pos[] = {0.0, 0.0, 1.0, 0.0f};
+	float point_intensity[] = {0.8, 0.8, 0.8, 1.0f};
+
+	glLightfv(GL_LIGHT0, GL_POSITION, point_pos);
+	glLightfv(GL_LIGHT0, GL_DIFFUSE,  point_intensity);
+	glLightfv(GL_LIGHT0, GL_SPECULAR,  point_intensity);
+
+	glEnable(GL_LIGHT0);
+
+	float ambient[] = {0.05f, 0.05f, 0.05f, 1.0f};
+	glLightfv(GL_LIGHT3, GL_AMBIENT,  ambient);
+	glEnable(GL_LIGHT3);
+}
+
+void colourMenu(int colour){
+	if (colour == 0)
+		sculpt->SetCurrentColour(0.9, 0.05, 0.05, sculpt->current_colour[3]);
+	if (colour == 1)
+		sculpt->SetCurrentColour(0.9, 0.5, 0.05, sculpt->current_colour[3]);
+	if (colour == 2)
+		sculpt->SetCurrentColour(0.9, 0.9, 0.05, sculpt->current_colour[3]);
+	if (colour == 3)
+		sculpt->SetCurrentColour(0.05, 0.6, 0.05, sculpt->current_colour[3]);
+	if (colour == 4)
+		sculpt->SetCurrentColour(0.25, 1.0, 0.25, sculpt->current_colour[3]);
+	if (colour == 5)
+		sculpt->SetCurrentColour(0.05, 0.05, 1.0, sculpt->current_colour[3]);
+	if (colour == 6)
+		sculpt->SetCurrentColour(0.1, 0.5, 1.0, sculpt->current_colour[3]);
+	if (colour == 7)
+		sculpt->SetCurrentColour(0.3, 0.2, 0.1, sculpt->current_colour[3]);
+	if (colour == 8)
+		sculpt->SetCurrentColour(0.45, 0.3, 0.15, sculpt->current_colour[3]);
+	if (colour == 9)
+		sculpt->SetCurrentColour(0.0, 0.0, 0.0, sculpt->current_colour[3]);
+	if (colour == 10)
+		sculpt->SetCurrentColour(1.0, 1.0, 1.0, sculpt->current_colour[3]);
+}
+
 // Set Light
 void G308_SetLight()
 {
 	//--Point Light as Sun --//
-	float point_pos[] = {-6.0,0,0, 0.0f};
-	//float point_intensity[] = {1, 0.8, 0.2, 1.0f};
-	float point_intensity[] = {1, 1, 1, 1.0f};
+	float point_pos[] = {-6.0,0,0, 1.0f};
+	float point_intensity[] = {1, 0.8, 0.2, 1.0f};
 
 	glLightfv(GL_LIGHT0, GL_POSITION, point_pos);
 	glLightfv(GL_LIGHT0, GL_DIFFUSE,  point_intensity);
@@ -356,6 +426,44 @@ void G308_keyboardListener(unsigned char key, int x, int y) {
 		}else
 			sun_active=true;
 	}
+	//Turn on/off sculpt mode.
+	else if (key == 'e') {
+		sculpt_mode = !sculpt_mode;
+	}
+	if (sculpt_mode){
+		//Toggle sculpting or painting.
+		if (key == 't') {
+			if (tool == 1)
+				tool = 2;
+			else
+				tool = 1;
+		}
+		//Colour alpha up and down.
+		else if (key == 'w'){
+			sculpt->current_colour[3] = min(sculpt->current_colour[3] + 0.05f, 1.0f);
+		}
+		else if (key == 'q'){
+			sculpt->current_colour[3] = max(sculpt->current_colour[3] - 0.05f, 0.0f);
+		}
+		//Fill object with current colour.
+		else if (key == 'f'){
+			sculpt->FillColour();
+		}
+		//Increase/decrease strength of geometry brush.
+		else if(key == 's'){
+			sculpt_str += 0.0002;
+		}
+		else if(key == 'a'){
+			sculpt_str = max(sculpt_str - 0.0002f, 0.0f);
+		}
+		//Increase/decrease size of brush.
+		else if(key == 'x'){
+			sculpt_dist += 0.5;
+		}
+		else if(key == 'z'){
+			sculpt_dist = max(sculpt_str - 0.5f, 0.0f);
+		}
+	}
 }
 
 void G308_mouseListener(int button, int state, int x, int y){
@@ -377,7 +485,7 @@ void G308_mouseListener(int button, int state, int x, int y){
 		}
 	}
 	else {
-		if (button==GLUT_LEFT_BUTTON && state==GLUT_DOWN) {
+		if (button==GLUT_LEFT_BUTTON && state==GLUT_DOWN && sculpt_mode) {
 			sculpting = true;
 		}
 	}
@@ -395,9 +503,9 @@ void updateMouse(int x, int y){
 
 			//Hold Alt to reverse direction.
 			if (glutGetModifiers() == GLUT_ACTIVE_ALT)
-				sculpt->MouseDrag(x, y, -0.002, 10.0f, 2);
+				sculpt->MouseDrag(x, y, -sculpt_str, sculpt_dist, tool);
 			else
-				sculpt->MouseDrag(x, y, 0.002, 10.0f, 2);
+				sculpt->MouseDrag(x, y, sculpt_str, sculpt_dist, tool);
 			
 		
 		glPopMatrix();

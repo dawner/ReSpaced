@@ -25,7 +25,7 @@ SculptObject::SculptObject(void) {
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
 
 	for (int i = 0; i < (width*height*3)-2; i+=3){
-		pixels[i] = ((i+1) % 256)/255.0f;
+		pixels[i] = ((i) % 256)/255.0f;
 		pixels[i+1] = ((i / 256) % 256)/255.0f;
 		pixels[i+2] = ((i / 65536) % 256)/255.0f;
 	}
@@ -39,17 +39,10 @@ SculptObject::SculptObject(void) {
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
 
-	for (int i = 0; i < (width*height*3)-2; i+=3){
-		texture[i] = 255;
-		texture[i+1] = 255;
-		texture[i+2] = 255;
-	}
-	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RGB, GL_FLOAT, texture);
+	SetCurrentColour(1.0, 1.0, 1.0, 1.0);
+	FillColour();
 
-	current_colour[0] = 0.0f;
-	current_colour[1] = 0.0f;
-	current_colour[2] = 0.0f;
-	current_colour[3] = 0.5f;
+	SetCurrentColour(0.0, 0.5, 0.5, 0.5);
 }
 
 SculptObject::~SculptObject(void) {
@@ -267,19 +260,20 @@ void SculptObject::MouseDrag(int x, int y, float strength, float distance, int m
 	glColorMaterial(GL_FRONT_AND_BACK, GL_AMBIENT_AND_DIFFUSE);
 
 	RenderGeometry(mode);
+
 	unsigned char pixel[3];
 	GLint viewport[4];
 	glGetIntegerv(GL_VIEWPORT, viewport);
 	glReadPixels(x, viewport[3] - y, 1, 1, GL_RGB, GL_UNSIGNED_BYTE, pixel);
 	if (pixel[0] + pixel[1] + pixel[2] != 0) {
-		int n = (pixel[0] - 1) + pixel[1] * 256 + pixel[2] * 65536;
-
 		if (mode == 1) {
+			int n = (pixel[0] - 1) + pixel[1] * 256 + pixel[2] * 65536;
 			edited_triangles.clear();
 			Sculpt(n, strength, distance, 0.0f);
 		}
 		else if (mode == 2) {
-			Paint(n, distance);
+			int n = (pixel[0]) + pixel[1] * 256 + pixel[2] * 65536;
+			Paint(n, distance*3);
 		}
 		
 	}
@@ -335,23 +329,38 @@ void SculptObject::Sculpt(int poly, float strength, float max_dist, float cur_di
 	}
 }
 
-void SculptObject::Paint(int pixel, float distance){
+void SculptObject::Paint(int pixel, int distance){
 	for (int x = -distance; x < distance; x++){
 		for (int y = -distance; y < distance; y++){
 			if (sqrt(x*x + y*y) < distance){
 				int pos = pixel + (x*3) + (y*3*width);
-				texture[pos] = current_colour[0]*current_colour[3] + texture[pos]*(1-current_colour[3]);
-				texture[pos + 1] = current_colour[1]*current_colour[3] + texture[pos+1]*(1-current_colour[3]);
-				texture[pos + 2] = current_colour[2]*current_colour[3] + texture[pos+2]*(1-current_colour[3]);
+				if (pos >= 0 && pos <= width*height*3){
+					texture[pos] = current_colour[0]*current_colour[3] + texture[pos]*(1.0f-current_colour[3]);
+					texture[pos + 1] = current_colour[1]*current_colour[3] + texture[pos+1]*(1.0f-current_colour[3]);
+					texture[pos + 2] = current_colour[2]*current_colour[3] + texture[pos+2]*(1.0f-current_colour[3]);
+				}
 			}
 		}
 		
 	}
-	//texture[pixel] = 0.0f;
-	//texture[pixel+1] = 0.0f;
-	//texture[pixel+2] = 0.0f;
 	glBindTexture(GL_TEXTURE_2D, display_texture);
 	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RGB, GL_FLOAT, texture);
+}
+
+void SculptObject::FillColour(){
+	for (int i = 0; i < (width*height*3)-2; i+=3){
+		texture[i] = current_colour[0]*current_colour[3] + texture[i]*(1.0f-current_colour[3]);
+		texture[i+1] = current_colour[1]*current_colour[3] + texture[i+1]*(1.0f-current_colour[3]);
+		texture[i+2] = current_colour[2]*current_colour[3] + texture[i+2]*(1.0f-current_colour[3]);
+	}
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RGB, GL_FLOAT, texture);
+}
+
+void SculptObject::SetCurrentColour(float r, float g, float b, float a){
+	current_colour[0] = r;
+	current_colour[1] = g;
+	current_colour[2] = b;
+	current_colour[3] = a;
 }
 
 float SculptObject::calculateDistance(int v1, int v2) {
@@ -443,7 +452,5 @@ void SculptObject::RenderGeometry(int mode) {
 		glEnd();
 
 	}
-	glDisable(GL_TEXTURE_GEN_S);
-	glDisable(GL_TEXTURE_GEN_T);
 	glDisable(GL_TEXTURE_2D);
 }

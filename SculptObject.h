@@ -16,15 +16,15 @@ private:
 	std::vector<int> *v_vertex_faces;
 	std::set<int> edited_triangles;
 
-	// Data for Geoemetry
+	// Data for Geometry
 	int m_nNumPoint;
 	int m_nNumUV;
 	int m_nNumNormal;
 	int m_nNumPolygon;
 
 	//Texture stuff.
-	static const int width = 1024;
-	static const int height = 1024;
+	static const int width = 512;
+	static const int height = 512;
 	float pixels[width*height*3];
 	float texture[width*height*3];
 	GLuint pick_texture;
@@ -38,11 +38,16 @@ public:
 	~SculptObject(void);
 
 	void ReadOBJ();
-	void ReadTexture(char* filename);
+	void LoadTexture(char* filename);
+
+	void SaveOBJ(char* filename);
+	void SaveTexture(char* filename);
 
 	void MouseDrag(int x, int y, float strength, float distance, int mode);
 	void Sculpt(int poly, float strength, float max_dist, float cur_dist);
-	void Paint(int pixel, float distance);
+	void Paint(int pixel, int distance);
+	void FillColour();
+	void SetCurrentColour(float r, float g, float b, float a);
 
 	void RenderGeometry(int mode);     // mode : G308_SHADE_POLYGON, G308_SHADE_WIREFRAME
 	void calculateVertexNormal(int vertex);
