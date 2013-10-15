@@ -356,7 +356,7 @@ void SculptObject::Paint(int pixel, int distance){
 		for (int y = -distance; y < distance; y++){
 			if (sqrt(x*x + y*y) < distance){
 				int pos = pixel + (x*3) + (y*3*width);
-				if (pos >= 0 && pos <= width*height*3){
+				if (pos >= 0 && pos <= (width*height*3)-2){
 					texture[pos] = current_colour[0]*current_colour[3] + texture[pos]*(1.0f-current_colour[3]);
 					texture[pos + 1] = current_colour[1]*current_colour[3] + texture[pos+1]*(1.0f-current_colour[3]);
 					texture[pos + 2] = current_colour[2]*current_colour[3] + texture[pos+2]*(1.0f-current_colour[3]);

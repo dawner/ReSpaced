@@ -78,6 +78,9 @@ float sculpt_dist = 5.0f;
 void SculptingLight();
 void colourMenu(int);
 
+SculptObject *dirt_planet;
+SculptObject *asteroid1;
+
 //Particle System variables
 ParticleSystem* particle_system = NULL;
 int num_particles=3000;
@@ -124,8 +127,15 @@ int main(int argc, char** argv)
 	//Sculpt stuff.
 	sculpt = new SculptObject();
 	sculpt->ReadOBJ("sculpt_sphere.obj");
-	//sculpt->ReadOBJ("blah.obj");
-	//sculpt->LoadTexture("blah.txt");
+
+	//Space objects.
+	dirt_planet = new SculptObject();
+	dirt_planet->ReadOBJ("dirt_planet.obj");
+	dirt_planet->LoadTexture("dirt_planet.txt");
+
+	asteroid1 = new SculptObject();
+	asteroid1->ReadOBJ("asteroid1.obj");
+	asteroid1->LoadTexture("asteroid1.txt");
 
 
 	particle_system = new ParticleSystem(num_particles);
@@ -297,6 +307,7 @@ void G308_Display()
 		if (sculpt_mode)
 			SculptingLight();
 
+		//Camera changes.
 		glTranslatef(cam_position.x, cam_position.y, cam_position.z);
 		glRotatef(theta_x, 1.0, 0.0, 0.0);
 		glRotatef(theta_y, 0.0, 1.0, 0.0);
@@ -311,9 +322,22 @@ void G308_Display()
 		}
 		//Everything else goes in here.
 		else {
-			//Camera changes.
+
 			G308_SetLight();
 
+			//Sculpted objects. Physics system will probably want to do something with these.
+			//Feel free to change how these are handled.
+			glPushMatrix();
+			glTranslatef(5.0f, 0.0f, 0.0f);
+			glScalef(0.5f, 0.5f, 0.5f);
+			dirt_planet->RenderGeometry(0);
+			glPopMatrix();
+
+			glPushMatrix();
+			glTranslatef(5.0f, 0.0f, 5.0f);
+			glScalef(0.25f, 0.25f, 0.25f);
+			asteroid1->RenderGeometry(0);
+			glPopMatrix();
 
 			//particle stuff
 			if (sun_active){
