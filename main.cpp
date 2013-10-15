@@ -54,6 +54,8 @@ int drag_y;
 float theta_x = 0.0;
 float theta_y = 0.0;
 
+float star_distance=30; //distance of stars from origin
+
 void G308_Display() ;
 void G308_Reshape(int w, int h) ;
 void G308_SetCamera();
@@ -68,7 +70,7 @@ int load_cubemap(char**);
 void set_material(float property[], float, float, float, float);
 
 //Sculpting variables.
-bool sculpt_mode = true;
+bool sculpt_mode = false;
 SculptObject *sculpt;
 bool sculpting = false;
 int tool = 1;
@@ -138,7 +140,7 @@ int main(int argc, char** argv)
 	asteroid1->LoadTexture("asteroid1.txt");
 
 
-	particle_system = new ParticleSystem(num_particles);
+	particle_system = new ParticleSystem(num_particles,star_distance);
 	collision_system = new CollisionSystem();
 	glutCreateMenu(colourMenu);
 	glutAddMenuEntry("Red", 0);
@@ -152,7 +154,6 @@ int main(int argc, char** argv)
 	glutAddMenuEntry("Light Brown", 8);
 	glutAddMenuEntry("Black", 9);
 	glutAddMenuEntry("White", 10);
-	glutAttachMenu(GLUT_RIGHT_BUTTON);
 	
 	
 	// char* filenames[6] = {"right.jpg","left.jpg","bot.jpg","top.jpg","front.jpg","back.jpg"};
@@ -340,14 +341,13 @@ void G308_Display()
 			glPopMatrix();
 
 			//particle stuff
-			if (sun_active){
-				for(int i=0;i<particles_per_frame;++i){
-					particle_system->CreateParticle();
-				}
+			glColor3f(0,0,0);
+			for(int i=0;i<particles_per_frame;++i){
+				particle_system->CreateParticle();
 			}
+
 			particle_system->display(theta_x,theta_y);
 			collision_system->step();
-	
 		}
 		glPopMatrix();
 
@@ -430,7 +430,7 @@ void colourMenu(int colour){
 void G308_SetLight()
 {
 	//--Point Light as Sun --//
-	float point_pos[] = {-6.0,0,0, 1.0f};
+	float point_pos[] = {0.0,0.0,0.0, 1.0f};
 	float point_intensity[] = {1, 0.8, 0.2, 1.0f};
 
 	glLightfv(GL_LIGHT0, GL_POSITION, point_pos);
@@ -449,16 +449,15 @@ void G308_SetLight()
 void G308_keyboardListener(unsigned char key, int x, int y) {
 	//Code to respond to key events
 	if (key==13){
-		if (sun_active){
-			sun_active=false;
-			particle_system->killAll();
-		}else
-			sun_active=true;
-	}
-	//Turn on/off sculpt mode.
-	else if (key == 'e') {
 		sculpt_mode = !sculpt_mode;
+		if (sculpt_mode){
+			particle_system->killAll();	
+			glutAttachMenu(GLUT_RIGHT_BUTTON);
+		}else	
+			glutDetachMenu(GLUT_RIGHT_BUTTON);
+
 	}
+
 	if (sculpt_mode){
 		//Toggle sculpting or painting.
 		if (key == 't') {
@@ -561,6 +560,15 @@ void updateMouse(int x, int y){
 	else if (panning) {
 		cam_position.x += (float) (x - clickDown.x)/20.0;
 		cam_position.y -= (float) (y - clickDown.y)/20.0;
+		//ensure camera doesn't pan past stars
+		if (cam_position.x>(star_distance/3.0))
+			cam_position.x=star_distance/3.0;
+		if (cam_position.y>(star_distance/3.0))
+			cam_position.y=star_distance/3.0;
+		if (cam_position.x<(-1*star_distance/3.0))
+			cam_position.x=-1*star_distance/3.0;
+		if (cam_position.y<(-1*star_distance/3.0))
+			cam_position.y=-1*star_distance/3.0;
 	}
 	glutPostRedisplay( );
 

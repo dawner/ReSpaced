@@ -14,7 +14,7 @@
 #include "ParticleSystem.h"
 
 
-ParticleSystem::ParticleSystem(int num_particles) {
+ParticleSystem::ParticleSystem(int num_particles, float star_dis) {
 	total_particles=num_particles;
 	sun_radius = 2;
 	particle_size=0.03;
@@ -30,7 +30,7 @@ ParticleSystem::ParticleSystem(int num_particles) {
 	particle_count=0;
 
 	//set emitter values
-	emitter_position.x=-6;
+	emitter_position.x=0;
 	emitter_position.y=0;
 	emitter_position.z=0;
 	global_force.x=0;
@@ -58,6 +58,7 @@ ParticleSystem::ParticleSystem(int num_particles) {
 	flare_tail=40;
 	flare_colour.r=0.95;
 	flare_colour.g=0.15;
+	flare_colour.b=0;
 	flare_colour_variation.r=0.1;
 	flare_colour_variation.g=0.1;
 	flare_colour_variation.b=0;
@@ -68,19 +69,30 @@ ParticleSystem::ParticleSystem(int num_particles) {
 	tail_pointer=0;
 
 	srand((unsigned)time(0)); 
+
+	//set up stars
+	num_stars = 1000;
+	star_distance=star_dis;
+	stars = (G308_Point*) malloc(sizeof(G308_Point)*num_stars);
+	for (int i=0;i<num_stars;++i){
+		stars[i].x=180.0*((rand()%100)/-100.0); //only allow negative x rotation, to face camera
+		stars[i].y=0;
+		stars[i].z=90.0*random();;
+	}
 }
 
 ParticleSystem::~ParticleSystem(void) {
 	delete[] particles;
 }
 
+/* If space, creates a new particle, with random variables. 
+/ Every flare_n-th particle is marked as a flare */
 void ParticleSystem::CreateParticle(){
 	if (particles==NULL || particle_count==total_particles || (particle_count>0 && last_particle==NULL)){
 		return; //particle list has no space
 	}
 
 	Particle* p = particles; //next particle to be assigned 
-	// printf("created %d\n", &(*p));
 	particles=particles->next;
 
 	last_particle=p;
@@ -147,10 +159,10 @@ void ParticleSystem::display(float rot_x, float rot_y){
 	glDisable(GL_LIGHTING);
 
 	//draw sun itself
-	glTranslatef(-6,0,0);
+	glTranslatef(emitter_position.x, emitter_position.y, emitter_position.z);
 	glColor3f(0.8,0.45,0);
 	glutSolidSphere(sun_radius,50, 50);
-	glTranslatef(6,0,0);
+	glTranslatef(-emitter_position.x, -emitter_position.y, -emitter_position.z);
 
 	Particle* p = last_particle;
 	while(p!=NULL){
@@ -173,6 +185,7 @@ void ParticleSystem::display(float rot_x, float rot_y){
 	while(p!=NULL){
 		p=removeDead(p);	
 	}
+	drawStars(rot_x,rot_y);
 	glEnable(GL_LIGHTING);
 
 }
@@ -184,6 +197,7 @@ void ParticleSystem::killAll() {
 		removeDead(last_particle);
 	}
 }
+
 
 /* ------- PRIVATE METHODS -------- */
 
@@ -206,7 +220,7 @@ void ParticleSystem::positionParticle(Particle* p, float rot_x, float rot_y){
 	glTranslatef(0,sun_radius,0);
 	glTranslatef(p->position.x, p->position.y, p->position.z);
 	glColor3f(p->colour.r,p->colour.g,p->colour.b);
-	
+
 	//reverse particle rotations so billboards face camera
 	glRotatef(-p->rotation.z,0,0,1);
 	glRotatef(-p->rotation.x,1,0,0);
@@ -278,21 +292,16 @@ void ParticleSystem::updateParticle(Particle* p) {
 ParticleSystem::Particle* ParticleSystem::removeDead(Particle* p) {
 	Particle* prev = p->prev;
 	if (p->life<=0){ 
-			// printf("removing %d\n",&(*p));
 
-		if (&(*last_particle)==&(*p)){ //removing last particle
+		if (&(*last_particle)==&(*p)){ 
+			//removing last particle, just update last_particle pointer
 			last_particle=p->prev;
-
 		}else{	
 			//remove p from current position
-			// printf("next %d\n",&(*p->next));
-			// printf("prev %d\n",&(*p->prev));
 			if (p->prev!=NULL)
 				p->prev->next=p->next;
 			if (p->next!=NULL)
 				p->next->prev=p->prev;
-			// printf("af next %d\n",&(*p->next));
-			// printf("af prev %d\n",&(*p->prev));
 
 			//move p into position before particles
 			p->next=particles;
@@ -302,10 +311,35 @@ ParticleSystem::Particle* ParticleSystem::removeDead(Particle* p) {
 			if (particles!=NULL)
 				particles->prev=p;
 		}
-
 		particles=p;
 		particle_count--;
 	}
 	return prev;
 }
 
+/* Draw the background             */
+void ParticleSystem::drawStars(float rot_x, float rot_y){
+	for (int i=0;i<num_stars;++i){
+		glPushMatrix();
+			//reverse camera rotations, to keep particles on viewing side
+			glRotatef(-rot_y, 0.0, 1.0, 0.0);
+			glRotatef(-rot_x, 1.0, 0.0, 0.0);
+			glRotatef(stars[i].x,1,0,0);
+			glRotatef(stars[i].z,0,0,1);
+			glTranslatef(0,star_distance,0);
+			glColor3f(1,1,1);
+
+			//reverse particle rotations so billboards face camera
+			glRotatef(-stars[i].z,0,0,1);
+			glRotatef(-stars[i].x,1,0,0);
+
+			glBegin(GL_QUADS);
+				glVertex3f(particle_size, particle_size, 0);
+				glVertex3f(-particle_size, particle_size, 0); 
+				glVertex3f(-particle_size, -particle_size, 0); 
+				glVertex3f(particle_size, -particle_size, 0); 
+			glEnd();
+		glPopMatrix();
+
+	}
+}

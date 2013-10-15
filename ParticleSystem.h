@@ -60,15 +60,20 @@ private:
 	Particle* particles; //list of all particles
 	Particle* last_particle;
 
+	G308_Point* stars;
+	int num_stars;
+	float star_distance;
+
 	float random();
 	void positionParticle(Particle*, float, float);
 	void drawParticle(Particle*);
 	void drawFlare(Particle*);
+	void drawStars(float rot_x, float rot_y);
 	void updateParticle(Particle*);
 	Particle* removeDead(Particle*);
 
 public:
-	ParticleSystem(int);
+	ParticleSystem(int, float);
 	~ParticleSystem(void);
 
 	void CreateParticle();
