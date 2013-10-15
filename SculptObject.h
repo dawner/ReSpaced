@@ -37,7 +37,7 @@ public:
 	SculptObject(void);
 	~SculptObject(void);
 
-	void ReadOBJ();
+	void ReadOBJ(char* filename);
 	void LoadTexture(char* filename);
 
 	void SaveOBJ(char* filename);

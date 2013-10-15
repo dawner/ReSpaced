@@ -60,8 +60,7 @@ SculptObject::~SculptObject(void) {
 //-------------------------------------------------------
 // Read in the OBJ (Note: fails quietly, so take care)
 //--------------------------------------------------------
-void SculptObject::ReadOBJ() {
-	char filename[] = "sculpt_sphere.obj";
+void SculptObject::ReadOBJ(char* filename) {
 	FILE* fp;
 	char mode, vmode;
 	char str[200];
@@ -214,40 +213,63 @@ void SculptObject::ReadOBJ() {
 
 }
 
-//--------------------------------------------------------------
-// [Assignment4]
-// Create a 2D GL texture from the file given
-//--------------------------------------------------------------
-/*void SculptObject::ReadTexture(char* filename) {
-	glClearColor(0.0, 0.0, 0.0, 0.0);
-	glShadeModel(GL_FLAT);
-	glEnable(GL_DEPTH_TEST);
+void SculptObject::LoadTexture(char* filename) {
+	FILE* fp;
 
-	TextureInfo t;
-	loadTextureFromJPEG(filename, &t);
+	fp = fopen(filename, "r");
+	if (fp == NULL)
+		printf("Error reading %s file\n", filename);
+	else
+		printf("Reading %s file\n", filename);
 
-	//Init the texture storage, and set some parameters.
-	//(I high recommend reading up on these commands)
-	glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
-	glGenTextures(1, texture);
-	glBindTexture(GL_TEXTURE_2D, *texture);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-
-	//Only useful for PNG files, since JPEG doesn't support alpha
-	if (t.hasAlpha) {
-		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, t.width, t.height, 0, GL_RGBA,
-				GL_UNSIGNED_BYTE, t.textureData);
-	} else {
-		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, t.width, t.height, 0, GL_RGB,
-				GL_UNSIGNED_BYTE, t.textureData);
+	for (int i = 0; i < (width*height*3); i++){
+		fscanf(fp, "%f ", &texture[i]);
 	}
-	//Once the texture has been loaded by GL, we don't need this anymore.
-	free(t.textureData);
+	glBindTexture(GL_TEXTURE_2D, display_texture);
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RGB, GL_FLOAT, texture);
+	printf("Reading texture file is DONE.\n");
+}
 
-}*/
+void SculptObject::SaveOBJ(char* filename){
+	FILE* fp;
+
+	fp = fopen(filename, "w");
+	if (fp == NULL)
+		printf("Error writing %s file\n", filename);
+	else
+		printf("Writing %s file\n", filename);
+	int i;
+	for (i = 0; i < m_nNumPoint; i++){
+		fprintf(fp, "v %f %f %f\n", m_pVertexArray[i].x, m_pVertexArray[i].y, m_pVertexArray[i].z);
+	}
+	for (i = 0; i < m_nNumUV; i++){
+		fprintf(fp, "vt %f %f\n", m_pUVArray[i].u, m_pUVArray[i].v);
+	}
+	for (i = 0; i < m_nNumNormal; i++){
+		fprintf(fp, "vn %f %f %f\n", m_pNormalArray[i].x, m_pNormalArray[i].y, m_pNormalArray[i].z);
+	}
+	for (i = 0; i < m_nNumPolygon; i++){
+		fprintf(fp, "f %d/%d/%d %d/%d/%d %d/%d/%d\n", m_pTriangles[i].v1+1, m_pTriangles[i].t1+1, m_pTriangles[i].n1+1, m_pTriangles[i].v2+1, m_pTriangles[i].t2+1, m_pTriangles[i].n2+1, m_pTriangles[i].v3+1, m_pTriangles[i].t3+1, m_pTriangles[i].n3+1);
+	}
+	fclose(fp);
+	printf("Writing OBJ file is DONE.\n");
+}
+
+
+void SculptObject::SaveTexture(char* filename){
+	FILE* fp;
+
+	fp = fopen(filename, "w");
+	if (fp == NULL)
+		printf("Error writing %s file\n", filename);
+	else
+		printf("Writing %s file\n", filename);
+
+	for (int i = 0; i < (width*height*3); i++){
+		fprintf(fp, "%f ", texture[i]);
+	}
+	printf("Writing texture file is DONE.\n");
+}
 
 
 void SculptObject::MouseDrag(int x, int y, float strength, float distance, int mode) {

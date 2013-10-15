@@ -124,7 +124,11 @@ int main(int argc, char** argv)
 
 	//Sculpt stuff.
 	sculpt = new SculptObject();
-	sculpt->ReadOBJ();
+	sculpt->ReadOBJ("sculpt_sphere.obj");
+	//sculpt->ReadOBJ("blah.obj");
+	//sculpt->LoadTexture("blah.txt");
+
+
 	particle_system = new ParticleSystem(num_particles);
 	glutCreateMenu(colourMenu);
 	glutAddMenuEntry("Red", 0);
@@ -462,6 +466,16 @@ void G308_keyboardListener(unsigned char key, int x, int y) {
 		}
 		else if(key == 'z'){
 			sculpt_dist = max(sculpt_str - 0.5f, 0.0f);
+		}
+		else if(key == 'c'){
+			char filename [80];
+			printf("Enter obj name:\n");
+			scanf("%s", filename);
+			sculpt->SaveOBJ(filename);
+
+			printf("Enter texture name:\n");
+			scanf("%s", filename);
+			sculpt->SaveTexture(filename);
 		}
 	}
 }
