@@ -14,14 +14,22 @@
 #include "SculptObject.h"
 
 CollisionSystem::CollisionSystem(SculptObject** models) {
-	printf("Constructor called\n");
-	num_meteors = 10;
+	num_NonSunObjects = 5;
 	int i;
 
-	worldObjects = (Object*) malloc(sizeof(Object) * (num_meteors + 1));
+	worldObjects = (Object*) malloc(sizeof(Object) * (num_NonSunObjects + 1));
+
+	Model* sphere = loadModel("sculpt_sphere.obj");
+
+	// Make collision models
+	collisionModels = new CollisionModel*[8];
+	collisionModels[0] = simpleSphereModel(sphere, 1.22698890045f);
+	for (i = 1; i < 8; i++) {
+		collisionModels[i] = multiSphereModel(models[i - 1], 24);
+	}
 
 	// default values
-	for (i = 0; i <= num_meteors; i++) {
+	for (i = 0; i <= num_NonSunObjects; i++) {
 		worldObjects[i].position.x = 0;
 		worldObjects[i].position.y = 0;
 		worldObjects[i].position.z = 0;
@@ -35,30 +43,77 @@ CollisionSystem::CollisionSystem(SculptObject** models) {
 		worldObjects[i].weight = 0;
 
 		worldObjects[i].displayModel = NULL;
-		worldObjects[i].displayModelScale = 1;
 		worldObjects[i].collisionModel = NULL;
-		worldObjects[i].collisionModelScale = 1;
 
 		worldObjects[i].radius = 0;
 	}
 
-	Model* sphere = loadModel("sculpt_sphere.obj");
-	Model* asteroid1 = loadModel("asteroid1.obj");
-
 	// the sun
 	worldObjects[0].weight = 100000;
-	worldObjects[0].collisionModel = simpleSphereModel(sphere, 1.22698890045f); // todo: sphere
-	worldObjects[0].collisionModelScale = 1.22698890045f; // the sculpt sphere has radius 1.63
+	worldObjects[0].collisionModel = collisionModels[0]; // basic sphere not used anywhere else
 
-	printf("Constructor called\n");
+	// planets
+	worldObjects[1].position.x = -5;
+	worldObjects[1].position.y = -5;
+	worldObjects[1].displayModel = models[5];
+	worldObjects[1].collisionModel = collisionModels[6];
+	worldObjects[1].direction.x = -5;
+	worldObjects[1].direction.y = 5;
+	worldObjects[1].direction.z = 0;
+	normalize(&worldObjects[1].direction);
+	worldObjects[1].speed = 0.0284;
+	worldObjects[1].weight = 1000;
+
+	worldObjects[2].position.x = 5;
+	worldObjects[2].position.y = -5;
+	worldObjects[2].displayModel = models[4];
+	worldObjects[2].collisionModel = collisionModels[5];
+	worldObjects[2].direction.x = -5;
+	worldObjects[2].direction.y = -5;
+	worldObjects[2].direction.z = 0;
+	normalize(&worldObjects[2].direction);
+	worldObjects[2].speed = 0.0284;
+	worldObjects[2].weight = 1000;
+
+	worldObjects[3].position.x = 5;
+	worldObjects[3].position.y = 5;
+	worldObjects[3].displayModel = models[6];
+	worldObjects[3].collisionModel = collisionModels[7];
+	worldObjects[3].direction.x = 5;
+	worldObjects[3].direction.y = -5;
+	worldObjects[3].direction.z = 0;
+	normalize(&worldObjects[3].direction);
+	worldObjects[3].speed = 0.0284;
+	worldObjects[3].weight = 1000;
+
+	// static meteors
+	worldObjects[4].position.x = -8;
+	worldObjects[4].position.y = 8;
+	worldObjects[4].position.z = 8;
+	worldObjects[4].displayModel = models[1];
+	worldObjects[4].collisionModel = collisionModels[2];
+	worldObjects[4].direction.x = 1;
+	worldObjects[4].direction.y = -1;
+	normalize(&worldObjects[4].direction);
+	worldObjects[4].speed = 0.2;
+	worldObjects[4].weight = 20;
+
+	worldObjects[5].position.x = 8;
+	worldObjects[5].position.y = 0;
+	worldObjects[5].position.z = 8;
+	worldObjects[5].displayModel = models[2];
+	worldObjects[5].collisionModel = collisionModels[3];
+	worldObjects[5].direction.x = -1;
+	worldObjects[5].speed = 0.05;
+	worldObjects[5].weight = 20;
 
 	// meteors
-	for (i = 1; i <= num_meteors; i++) {
+	for (i = 6; i <= num_NonSunObjects; i++) {
 		worldObjects[i].position.x = floatRand(-10, 10, 1000);
 		worldObjects[i].position.y = floatRand(-10, 10, 1000);
 		worldObjects[i].position.z = floatRand(-10, 10, 1000);
 		worldObjects[i].position.x = i * 0.5;
-		worldObjects[i].weight = 100;
+		worldObjects[i].weight = 0.01;
 
 		worldObjects[i].direction.x = floatRand(-10, 10, 1000);
 		worldObjects[i].direction.y = floatRand(-10, 10, 1000);
@@ -66,50 +121,52 @@ CollisionSystem::CollisionSystem(SculptObject** models) {
 		normalize(&(worldObjects[i].direction));
 		worldObjects[i].speed = 0.01 * floatRand(0, 3, 1000);
 
-		worldObjects[i].displayModel = models[2];
-		worldObjects[i].displayModelScale = 1.0f;
-		worldObjects[i].collisionModel = multiSphereModel(models[2], 1.0f, 64);
-		worldObjects[i].collisionModelScale = 1.0f;
+		worldObjects[i].displayModel = models[1];
+		worldObjects[i].collisionModel = collisionModels[2];
 	}
 
-	// bounding spheres
-	for (i = 0; i <= num_meteors; i++) {
-		float radius = 0;
-		if (worldObjects[i].collisionModel->fullPolyModel != NULL) {
-			for (int j = 0;
-					j
-							< worldObjects[i].collisionModel->fullPolyModel->m_nNumPoint;
-					j++) {
-				if (magnitude(
-						&(worldObjects[i].collisionModel->fullPolyModel->m_pVertexArray[j]))
-						> radius) {
-					radius =
-							magnitude(
-									&(worldObjects[i].collisionModel->fullPolyModel->m_pVertexArray[j]));
-				}
-			}
+// bounding spheres
+	for (i = 0; i <= num_NonSunObjects; i++) {
+		if (i == 0) {
+			worldObjects[i].radius = 2;
 		} else {
-			for (int j = 0;
-					j
-							< worldObjects[i].collisionModel->fullPolyModelSculpt->m_nNumPoint;
-					j++) {
-				if (magnitude(
-						&(worldObjects[i].collisionModel->fullPolyModelSculpt->m_pVertexArray[j]))
-						> radius) {
-					radius =
-							magnitude(
-									&(worldObjects[i].collisionModel->fullPolyModelSculpt->m_pVertexArray[j]));
+			float radius = 0;
+			if (worldObjects[i].collisionModel->fullPolyModel != NULL) {
+				for (int j = 0;
+						j
+								< worldObjects[i].collisionModel->fullPolyModel->m_nNumPoint;
+						j++) {
+					if (magnitude(
+							&(worldObjects[i].collisionModel->fullPolyModel->m_pVertexArray[j]))
+							> radius) {
+						radius =
+								magnitude(
+										&(worldObjects[i].collisionModel->fullPolyModel->m_pVertexArray[j]));
+					}
+				}
+			} else {
+				for (int j = 0;
+						j
+								< worldObjects[i].collisionModel->fullPolyModelSculpt->m_nNumPoint;
+						j++) {
+					if (magnitude(
+							&(worldObjects[i].collisionModel->fullPolyModelSculpt->m_pVertexArray[j]))
+							> radius) {
+						radius =
+								magnitude(
+										&(worldObjects[i].collisionModel->fullPolyModelSculpt->m_pVertexArray[j]));
+					}
 				}
 			}
+			worldObjects[i].radius = radius;
 		}
-		worldObjects[i].radius = radius * worldObjects[i].collisionModelScale;
 		printf("object %d radius is %f\n", i, worldObjects[i].radius);
 	}
 }
 
 CollisionSystem::CollisionModel* CollisionSystem::simpleSphereModel(
 		CollisionSystem::Model* base, float scale) {
-	// determine full radius
+// determine full radius
 	float radius = 0;
 	for (int j = 0; j < base->m_nNumPoint; j++) {
 		if (magnitude(&(base->m_pVertexArray[j])) > radius) {
@@ -129,11 +186,11 @@ CollisionSystem::CollisionModel* CollisionSystem::simpleSphereModel(
 }
 
 CollisionSystem::CollisionModel* CollisionSystem::multiSphereModel(
-		SculptObject* base, float scale, int sphereCount) {
-	// pick cluster indexes
+		SculptObject* base, int sphereCount) {
+// pick cluster indexes
 	int* clusterIndexes = new int[base->m_nNumPoint];
 	int c, i;
-	// pick random centers
+// pick random centers
 	G308_Point* centers = pickRandomPoints(base->m_pVertexArray,
 			base->m_nNumPoint, sphereCount);
 	int* pointsInCluster = new int[sphereCount];
@@ -191,8 +248,8 @@ CollisionSystem::CollisionModel* CollisionSystem::multiSphereModel(
 		// and set new variance
 		prevVariance = newVariance;
 	}
-	// now we make spheres
-	// check each cluster center against the points in it
+// now we make spheres
+// check each cluster center against the points in it
 	float* maxDists = new float[sphereCount];
 	for (c = 0; c < sphereCount; c++) {
 		maxDists[c] = 0;
@@ -204,17 +261,17 @@ CollisionSystem::CollisionModel* CollisionSystem::multiSphereModel(
 			maxDists[clusterIndexes[i]] = dist;
 		}
 	}
-	// sweet, now sphere time
+// sweet, now sphere time
 	CollisionModel* ret = new CollisionModel;
 	ret->fullPolyModel = NULL;
 	ret->fullPolyModelSculpt = base;
 	ret->sphereCount = sphereCount;
 	ret->spheres = new Sphere[sphereCount];
 	for (c = 0; c < sphereCount; c++) {
-		ret->spheres[c].radius = maxDists[c] * scale;
-		ret->spheres[c].relativePosition.x = centers[c].x * scale;
-		ret->spheres[c].relativePosition.y = centers[c].y * scale;
-		ret->spheres[c].relativePosition.z = centers[c].z * scale;
+		ret->spheres[c].radius = maxDists[c];
+		ret->spheres[c].relativePosition.x = centers[c].x;
+		ret->spheres[c].relativePosition.y = centers[c].y;
+		ret->spheres[c].relativePosition.z = centers[c].z;
 	}
 	delete[] maxDists;
 	delete[] centers;
@@ -269,7 +326,7 @@ CollisionSystem::Model* CollisionSystem::loadModel(const char* filename) {
 	} else
 		printf("Reading %s file\n", filename);
 
-	// Check number of vertex, normal, uvCoord, and Face
+// Check number of vertex, normal, uvCoord, and Face
 	while (fgets(str, 200, fp) != NULL) {
 		sscanf(str, "%c%c", &mode, &vmode);
 		switch (mode) {
@@ -294,9 +351,9 @@ CollisionSystem::Model* CollisionSystem::loadModel(const char* filename) {
 
 	printf("Number of Point %d, UV %d, Normal %d, Face %d\n", numVert, numUV,
 			numNorm, numFace);
-	//-------------------------------------------------------------
-	//	Allocate memory for array
-	//-------------------------------------------------------------
+//-------------------------------------------------------------
+//	Allocate memory for array
+//-------------------------------------------------------------
 	model->m_pVertexArray = new G308_Point[model->m_nNumPoint];
 
 	model->m_pNormalArray = new G308_Normal[model->m_nNumNormal];
@@ -305,9 +362,9 @@ CollisionSystem::Model* CollisionSystem::loadModel(const char* filename) {
 
 	model->m_pTriangles = new G308_Triangle[model->m_nNumPolygon];
 
-	//-----------------------------------------------------------
-	//	Read obj file
-	//-----------------------------------------------------------
+//-----------------------------------------------------------
+//	Read obj file
+//-----------------------------------------------------------
 	numVert = numNorm = numUV = numFace = 0;
 
 	fseek(fp, 0L, SEEK_SET);
@@ -383,13 +440,13 @@ CollisionSystem::Model* CollisionSystem::loadModel(const char* filename) {
 }
 
 void CollisionSystem::step() {
-	// physics
+// physics
 	processPhysics();
 
-	// collisions
+// collisions
 	processCollisions();
 
-	// rendering
+// rendering
 	render();
 }
 
@@ -400,87 +457,139 @@ float CollisionSystem::floatRand(int min, int max, int precision) {
 }
 
 void CollisionSystem::render() {
-	// temp
-	glEnable(GL_COLOR_MATERIAL);
-	glColorMaterial(GL_FRONT_AND_BACK, GL_AMBIENT_AND_DIFFUSE);
-	for (int i = 0; i <= num_meteors; i++) {
+// temp
+	//glEnable(GL_COLOR_MATERIAL);
+	//glColorMaterial(GL_FRONT_AND_BACK, GL_AMBIENT_AND_DIFFUSE);
+	for (int i = 0; i <= num_NonSunObjects; i++) {
 		if (worldObjects[i].displayModel != NULL) {
 			// show this one
 			glPushMatrix();
 			glColor3f(0.8f, 0.8f, 0.8f);
 			glTranslatef(worldObjects[i].position.x, worldObjects[i].position.y,
 					worldObjects[i].position.z);
-			glScalef(worldObjects[i].displayModelScale,
-					worldObjects[i].displayModelScale,
-					worldObjects[i].displayModelScale);
 			glRotatef(worldObjects[i].rotation.z, 0, 0, 1);
 			glRotatef(worldObjects[i].rotation.y, 0, 1, 0);
 			glRotatef(worldObjects[i].rotation.x, 1, 0, 0);
 			//glutSolidSphere(worldObjects[i].radius, 50, 50);
-			//worldObjects[i].displayModel->RenderGeometry(0);
+			worldObjects[i].displayModel->RenderGeometry(0);
 			// draw spheres
-			for (int s = 0; s < worldObjects[i].collisionModel->sphereCount;
-					s++) {
-				glPushMatrix();
-				glTranslatef(
-						worldObjects[i].collisionModel->spheres[s].relativePosition.x,
-						worldObjects[i].collisionModel->spheres[s].relativePosition.y,
-						worldObjects[i].collisionModel->spheres[s].relativePosition.z);
-				glutSolidSphere(
-						worldObjects[i].collisionModel->spheres[s].radius, 10,
-						10);
-				glPopMatrix();
-			}
+			//for (int s = 0; s < worldObjects[i].collisionModel->sphereCount;
+			//		s++) {
+			//	glPushMatrix();
+			//	glTranslatef(
+			//			worldObjects[i].collisionModel->spheres[s].relativePosition.x,
+			//			worldObjects[i].collisionModel->spheres[s].relativePosition.y,
+			//			worldObjects[i].collisionModel->spheres[s].relativePosition.z);
+			//	glutSolidSphere(
+			//			worldObjects[i].collisionModel->spheres[s].radius, 10,
+			//			10);
+			//	glPopMatrix();
+			//}
 			glPopMatrix();
 		}
 	}
-	glDisable(GL_COLOR_MATERIAL);
+	//glDisable(GL_COLOR_MATERIAL);
 }
 
 void CollisionSystem::processCollisions() {
-	// opening round: bounding spheres
-	for (int i = 0; i <= num_meteors; i++) {
-		for (int j = i + 1; j <= num_meteors; j++) {
+// opening round: bounding spheres
+	for (int i = 0; i <= num_NonSunObjects; i++) {
+		for (int j = i + 1; j <= num_NonSunObjects; j++) {
 			float distance = distanceCalc(worldObjects[i].position,
 					worldObjects[j].position);
 			float sumRadii = worldObjects[i].radius + worldObjects[j].radius;
 			// spherical collision: if (radius sum) > distance we have a winner
 			if (sumRadii >= distance) {
-				printf("objects %d and %d could be colliding, testing\n", i, j);
+				//printf("objects %d and %d could be colliding, testing\n", i, j);
 				// check for collision
 				bool collisionFound = false;
+				int collisS1, collisS2;
+				G308_Point colPos1, colPos2;
 				CollisionModel* m1, *m2;
 				m1 = worldObjects[i].collisionModel;
 				m2 = worldObjects[j].collisionModel;
+				// precalc relevant cosine and sine values
+				float rot1vals[6];
+				float rot2vals[6];
+				rot1vals[0] = sin(worldObjects[i].rotation.x * PI / 180);
+				rot1vals[1] = cos(worldObjects[i].rotation.x * PI / 180);
+				rot1vals[2] = sin(worldObjects[i].rotation.y * PI / 180);
+				rot1vals[3] = cos(worldObjects[i].rotation.y * PI / 180);
+				rot1vals[4] = sin(worldObjects[i].rotation.z * PI / 180);
+				rot1vals[5] = cos(worldObjects[i].rotation.z * PI / 180);
+				rot2vals[0] = sin(worldObjects[j].rotation.x * PI / 180);
+				rot2vals[1] = cos(worldObjects[j].rotation.x * PI / 180);
+				rot2vals[2] = sin(worldObjects[j].rotation.y * PI / 180);
+				rot2vals[3] = cos(worldObjects[j].rotation.y * PI / 180);
+				rot2vals[4] = sin(worldObjects[j].rotation.z * PI / 180);
+				rot2vals[5] = cos(worldObjects[j].rotation.z * PI / 180);
 				for (int s1 = 0; s1 < m1->sphereCount; s1++) {
 					for (int s2 = 0; s2 < m2->sphereCount; s2++) {
-						// todo: support rotation
+						G308_Point relPos1, relPos2;
+						relPos1 = m1->spheres[s1].relativePosition;
+						relPos2 = m2->spheres[s2].relativePosition;
+						// rotation
+						G308_Point rotRelPos1, rotRelPos2;
+						rotRelPos1.x = rot1vals[5] * rot1vals[3] * relPos1.x
+								+ (rot1vals[5] * rot1vals[2] * rot1vals[0]
+										- rot1vals[4] * rot1vals[1]) * relPos1.y
+								+ (rot1vals[5] * rot1vals[2] * rot1vals[1]
+										+ rot1vals[4] * rot1vals[0])
+										* relPos1.z;
+						rotRelPos1.y = rot1vals[4] * rot1vals[3] * relPos1.x
+								+ (rot1vals[4] * rot1vals[2] * rot1vals[0]
+										+ rot1vals[5] * rot1vals[1]) * relPos1.y
+								+ (rot1vals[4] * rot1vals[2] * rot1vals[1]
+										- rot1vals[5] * rot1vals[0])
+										* relPos1.z;
+						rotRelPos1.z = -rot1vals[2] * relPos1.x
+								+ rot1vals[3] * rot1vals[0] * relPos1.y
+								+ rot1vals[3] * rot1vals[1] * relPos1.z;
+						rotRelPos2.x = rot2vals[5] * rot2vals[3] * relPos2.x
+								+ (rot2vals[5] * rot2vals[2] * rot2vals[0]
+										- rot2vals[4] * rot2vals[1]) * relPos2.y
+								+ (rot2vals[5] * rot2vals[2] * rot2vals[1]
+										+ rot2vals[4] * rot2vals[0])
+										* relPos2.z;
+						rotRelPos2.y = rot2vals[4] * rot2vals[3] * relPos2.x
+								+ (rot2vals[4] * rot2vals[2] * rot2vals[0]
+										+ rot2vals[5] * rot2vals[1]) * relPos2.y
+								+ (rot2vals[4] * rot2vals[2] * rot2vals[1]
+										- rot2vals[5] * rot2vals[0])
+										* relPos2.z;
+						rotRelPos2.z = -rot2vals[2] * relPos2.x
+								+ rot2vals[3] * rot2vals[0] * relPos2.y
+								+ rot2vals[3] * rot2vals[1] * relPos2.z;
 						float distance =
 								sqrt(
 										pow(
 												(worldObjects[i].position.x
-														+ m1->spheres[s1].relativePosition.x)
+														+ rotRelPos1.x)
 														- (worldObjects[j].position.x
-																+ m2->spheres[s2].relativePosition.x),
+																+ rotRelPos2.x),
 												2)
 												+ pow(
 														(worldObjects[i].position.y
-																+ m1->spheres[s1].relativePosition.y)
+																+ rotRelPos1.y)
 																- (worldObjects[j].position.y
-																		+ m2->spheres[s2].relativePosition.y),
+																		+ rotRelPos2.y),
 														2)
 												+ pow(
 														(worldObjects[i].position.z
-																+ m1->spheres[s1].relativePosition.z)
+																+ rotRelPos1.z)
 																- (worldObjects[j].position.z
-																		+ m2->spheres[s2].relativePosition.z),
+																		+ rotRelPos2.z),
 														2));
 						if (distance
 								<= m1->spheres[s1].radius
 										+ m2->spheres[s2].radius) {
-							printf(
-									"found collision objects %d %d inner spheres %d %d \n",
-									i, j, s1, s2);
+							//printf(
+							//		"found collision objects %d %d inner spheres %d %d \n",
+							//		i, j, s1, s2);
+							colPos1 = rotRelPos1;
+							colPos2 = rotRelPos2;
+							collisS1 = s1;
+							collisS2 = s2;
 							collisionFound = true;
 							break;
 						}
@@ -488,6 +597,9 @@ void CollisionSystem::processCollisions() {
 					if (collisionFound) {
 						break;
 					}
+				}
+				if (collisionFound) {
+					reactCollision(i, j, colPos1, colPos2);
 				}
 			}
 		}
@@ -498,14 +610,48 @@ bool CollisionSystem::detectCollision(int obj1, int obj2) {
 	return false;
 }
 
-void CollisionSystem::reactCollision(int obj1, int obj2) {
-	printf("objects %d and %d are colliding\n", obj1, obj2);
+void CollisionSystem::reactCollision(int obj1, int obj2, G308_Point relPos1,
+		G308_Point relPos2) {
+	// approximate a collision between obj1 and obj2
+	// give them a very strong push away from each other in the vector of the collision
+	G308_Vector diffvector;
+	diffvector.x = (relPos2.x + worldObjects[obj2].position.x)
+			- (relPos1.x + worldObjects[obj1].position.x);
+	diffvector.y = (relPos2.y + worldObjects[obj2].position.y)
+			- (relPos1.y + worldObjects[obj1].position.y);
+	diffvector.z = (relPos2.z + worldObjects[obj2].position.z)
+			- (relPos1.z + worldObjects[obj1].position.z);
+	normalize(&diffvector);
+	// Diffvector now points from obj1 to obj2
+	// So push obj2 further in this direction
+	// and pull obj1 in the other direction
+	G308_Vector newMovement;
+	float repelFactor = 0.25;
+	newMovement.x = diffvector.x * repelFactor
+			+ worldObjects[obj2].direction.x * worldObjects[obj2].speed;
+	newMovement.y = diffvector.y * repelFactor
+			+ worldObjects[obj2].direction.y * worldObjects[obj2].speed;
+	newMovement.z = diffvector.z * repelFactor
+			+ worldObjects[obj2].direction.z * worldObjects[obj2].speed;
+	worldObjects[obj2].speed = magnitude(&newMovement);
+	normalize(&newMovement);
+	worldObjects[obj2].direction = newMovement;
+	// and the pull
+	newMovement.x = -diffvector.x * repelFactor
+			+ worldObjects[obj1].direction.x * worldObjects[obj1].speed;
+	newMovement.y = -diffvector.y * repelFactor
+			+ worldObjects[obj1].direction.y * worldObjects[obj1].speed;
+	newMovement.z = -diffvector.z * repelFactor
+			+ worldObjects[obj1].direction.z * worldObjects[obj1].speed;
+	worldObjects[obj1].speed = magnitude(&newMovement);
+	normalize(&newMovement);
+	worldObjects[obj1].direction = newMovement;
 }
 
 void CollisionSystem::processPhysics() {
-	// update positions
-	for (int i = 0; i <= num_meteors; i++) {
-		// This assumes direction vector is already normalized, might not be safe in practice
+// update positions
+	for (int i = 0; i <= num_NonSunObjects; i++) {
+// This assumes direction vector is already normalized, might not be safe in practice
 		worldObjects[i].position.x += worldObjects[i].direction.x
 				* worldObjects[i].speed;
 		worldObjects[i].position.y += worldObjects[i].direction.y
@@ -514,10 +660,10 @@ void CollisionSystem::processPhysics() {
 				* worldObjects[i].speed;
 	}
 
-	// basic gravity
+// basic gravity
 	float gconstant = 0.000000067;
-	for (int i = 0; i <= num_meteors; i++) {
-		for (int j = 0; j <= num_meteors; j++) {
+	for (int i = 0; i <= num_NonSunObjects; i++) {
+		for (int j = 0; j <= num_NonSunObjects; j++) {
 			if (i == j) {
 				continue;
 			}
@@ -547,6 +693,8 @@ void CollisionSystem::processPhysics() {
 			worldObjects[j].direction = newMovement;
 		}
 	}
+	printf("distance = %f\n",
+			distanceCalcP(worldObjects[1].position, worldObjects[0].position));
 }
 
 float CollisionSystem::dotProduct(G308_Vector* from, G308_Vector* to) {

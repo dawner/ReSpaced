@@ -16,7 +16,7 @@
 
 class CollisionSystem {
 private:
-	int num_meteors;
+	int num_NonSunObjects;
 
 	typedef struct Model {
 		// Array for Geometry
@@ -52,15 +52,14 @@ private:
 		float weight;
 
 		SculptObject* displayModel;
-		float displayModelScale;
 		CollisionModel* collisionModel;
-		float collisionModelScale;
 
 		// for bogus implementation
 		float radius;
 	} Object;
 
 	Object* worldObjects;
+	CollisionModel** collisionModels;
 
 	Model* loadModel(const char*);
 
@@ -69,7 +68,7 @@ private:
 	void processPhysics();
 	void processCollisions();
 	bool detectCollision(int, int);
-	void reactCollision(int, int);
+	void reactCollision(int, int, G308_Point, G308_Point);
 	void render();
 	void normalize(G308_Vector*);
 	float magnitude(G308_Vector*);
@@ -79,7 +78,7 @@ private:
 	float distanceCalc(G308_Vector, G308_Vector);
 
 	CollisionModel* simpleSphereModel(Model*, float);
-	CollisionModel* multiSphereModel(SculptObject*, float, int);
+	CollisionModel* multiSphereModel(SculptObject*, int);
 	G308_Point* pickRandomPoints(G308_Point*, int, int);
 
 public:
