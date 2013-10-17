@@ -71,7 +71,7 @@ void set_material(float property[], float, float, float, float);
 
 //Sculpting variables.
 bool sculpt_mode = false;
-SculptObject *sculpt;
+int sculpt = 0;
 bool sculpting = false;
 int tool = 1;
 float sculpt_str = 0.001f;
@@ -80,11 +80,8 @@ float sculpt_dist = 5.0f;
 void SculptingLight();
 void colourMenu(int);
 
-SculptObject *dirt_planet;
-SculptObject *asteroid1;
-
 // temp
-SculptObject* sculptedModels[3];
+SculptObject* sculptedModels[7];
 
 //Particle System variables
 ParticleSystem* particle_system = NULL;
@@ -130,21 +127,28 @@ int main(int argc, char** argv)
 	g_pGeometry = new G308_Geometry(numObjects);
 
 	//Sculpt stuff.
-	sculpt = new SculptObject();
-	sculpt->ReadOBJ("sculpt_sphere.obj");
+	for (int i = 0; i < 7; i++){
+		sculptedModels[i] = new SculptObject();
+	}
+	sculptedModels[0]->ReadOBJ("sculpt_sphere.obj");
 
-	//Space objects.
-	dirt_planet = new SculptObject();
-	dirt_planet->ReadOBJ("dirt_planet.obj");
-	dirt_planet->LoadTexture("dirt_planet.txt");
+	sculptedModels[1]->ReadOBJ("asteroid1.obj");
+	sculptedModels[1]->LoadTexture("asteroid1.txt");
 
-	asteroid1 = new SculptObject();
-	asteroid1->ReadOBJ("asteroid1.obj");
-	asteroid1->LoadTexture("asteroid1.txt");
+	sculptedModels[2]->ReadOBJ("asteroid2.obj");
+	sculptedModels[2]->LoadTexture("asteroid2.txt");
 
-	sculptedModels[0] = sculpt;
-	sculptedModels[1] = dirt_planet;
-	sculptedModels[2] = asteroid1;
+	sculptedModels[3]->ReadOBJ("asteroid3.obj");
+	sculptedModels[3]->LoadTexture("asteroid3.txt");
+
+	sculptedModels[4]->ReadOBJ("dirt_planet.obj");
+	sculptedModels[4]->LoadTexture("dirt_planet.txt");
+
+	sculptedModels[5]->ReadOBJ("blue_planet.obj");
+	sculptedModels[5]->LoadTexture("blue_planet.txt");
+
+	sculptedModels[6]->ReadOBJ("earthish.obj");
+	sculptedModels[6]->LoadTexture("earthish.txt");
 
 
 	particle_system = new ParticleSystem(num_particles,star_distance);
@@ -326,7 +330,7 @@ void G308_Display()
 
 		//Sculpting mode stuff goes in here.
 		if (sculpt_mode) {
-			sculpt->RenderGeometry(0);
+			sculptedModels[sculpt]->RenderGeometry(0);
 		}
 		//Everything else goes in here.
 		else {
@@ -398,27 +402,27 @@ void SculptingLight(){
 
 void colourMenu(int colour){
 	if (colour == 0)
-		sculpt->SetCurrentColour(0.9, 0.05, 0.05, sculpt->current_colour[3]);
+		sculptedModels[sculpt]->SetCurrentColour(0.9, 0.05, 0.05, sculptedModels[sculpt]->current_colour[3]);
 	if (colour == 1)
-		sculpt->SetCurrentColour(0.9, 0.5, 0.05, sculpt->current_colour[3]);
+		sculptedModels[sculpt]->SetCurrentColour(0.9, 0.5, 0.05, sculptedModels[sculpt]->current_colour[3]);
 	if (colour == 2)
-		sculpt->SetCurrentColour(0.9, 0.9, 0.05, sculpt->current_colour[3]);
+		sculptedModels[sculpt]->SetCurrentColour(0.9, 0.9, 0.05, sculptedModels[sculpt]->current_colour[3]);
 	if (colour == 3)
-		sculpt->SetCurrentColour(0.05, 0.6, 0.05, sculpt->current_colour[3]);
+		sculptedModels[sculpt]->SetCurrentColour(0.05, 0.6, 0.05, sculptedModels[sculpt]->current_colour[3]);
 	if (colour == 4)
-		sculpt->SetCurrentColour(0.25, 1.0, 0.25, sculpt->current_colour[3]);
+		sculptedModels[sculpt]->SetCurrentColour(0.25, 1.0, 0.25, sculptedModels[sculpt]->current_colour[3]);
 	if (colour == 5)
-		sculpt->SetCurrentColour(0.05, 0.05, 1.0, sculpt->current_colour[3]);
+		sculptedModels[sculpt]->SetCurrentColour(0.05, 0.05, 1.0, sculptedModels[sculpt]->current_colour[3]);
 	if (colour == 6)
-		sculpt->SetCurrentColour(0.1, 0.5, 1.0, sculpt->current_colour[3]);
+		sculptedModels[sculpt]->SetCurrentColour(0.1, 0.5, 1.0, sculptedModels[sculpt]->current_colour[3]);
 	if (colour == 7)
-		sculpt->SetCurrentColour(0.3, 0.2, 0.1, sculpt->current_colour[3]);
+		sculptedModels[sculpt]->SetCurrentColour(0.3, 0.2, 0.1, sculptedModels[sculpt]->current_colour[3]);
 	if (colour == 8)
-		sculpt->SetCurrentColour(0.45, 0.3, 0.15, sculpt->current_colour[3]);
+		sculptedModels[sculpt]->SetCurrentColour(0.45, 0.3, 0.15, sculptedModels[sculpt]->current_colour[3]);
 	if (colour == 9)
-		sculpt->SetCurrentColour(0.0, 0.0, 0.0, sculpt->current_colour[3]);
+		sculptedModels[sculpt]->SetCurrentColour(0.0, 0.0, 0.0, sculptedModels[sculpt]->current_colour[3]);
 	if (colour == 10)
-		sculpt->SetCurrentColour(1.0, 1.0, 1.0, sculpt->current_colour[3]);
+		sculptedModels[sculpt]->SetCurrentColour(1.0, 1.0, 1.0, sculptedModels[sculpt]->current_colour[3]);
 }
 
 // Set Light
@@ -463,38 +467,47 @@ void G308_keyboardListener(unsigned char key, int x, int y) {
 		}
 		//Colour alpha up and down.
 		else if (key == 'w'){
-			sculpt->current_colour[3] = min(sculpt->current_colour[3] + 0.05f, 1.0f);
+			sculptedModels[sculpt]->current_colour[3] = min(sculptedModels[sculpt]->current_colour[3] + 0.05f, 1.0f);
+			printf("Alpha: %f\n", sculptedModels[sculpt]->current_colour[3]);
 		}
 		else if (key == 'q'){
-			sculpt->current_colour[3] = max(sculpt->current_colour[3] - 0.05f, 0.0f);
+			sculptedModels[sculpt]->current_colour[3] = max(sculptedModels[sculpt]->current_colour[3] - 0.05f, 0.0f);
+			printf("Alpha: %f\n", sculptedModels[sculpt]->current_colour[3]);
 		}
 		//Fill object with current colour.
 		else if (key == 'f'){
-			sculpt->FillColour();
+			sculptedModels[sculpt]->FillColour();
 		}
 		//Increase/decrease strength of geometry brush.
 		else if(key == 's'){
-			sculpt_str += 0.0002;
+			sculpt_str += 0.0002f;
+			printf("Brush strength: %f\n", sculpt_str);
 		}
 		else if(key == 'a'){
 			sculpt_str = max(sculpt_str - 0.0002f, 0.0f);
+			printf("Brush strength: %f\n", sculpt_str);
 		}
 		//Increase/decrease size of brush.
 		else if(key == 'x'){
-			sculpt_dist += 0.5;
+			sculpt_dist += 0.5f;
+			printf("Brush size: %f\n", sculpt_dist);
 		}
 		else if(key == 'z'){
-			sculpt_dist = max(sculpt_str - 0.5f, 0.0f);
+			sculpt_dist = max(sculpt_dist - 0.5f, 0.0f);
+			printf("Brush size: %f\n", sculpt_dist);
 		}
 		else if(key == 'c'){
 			char filename [80];
 			printf("Enter obj name:\n");
 			scanf("%s", filename);
-			sculpt->SaveOBJ(filename);
+			sculptedModels[sculpt]->SaveOBJ(filename);
 
 			printf("Enter texture name:\n");
 			scanf("%s", filename);
-			sculpt->SaveTexture(filename);
+			sculptedModels[sculpt]->SaveTexture(filename);
+		}
+		else if(key == 'e'){
+			sculpt = (sculpt+1)%7;
 		}
 	}
 }
@@ -536,9 +549,9 @@ void updateMouse(int x, int y){
 
 			//Hold Alt to reverse direction.
 			if (glutGetModifiers() == GLUT_ACTIVE_ALT)
-				sculpt->MouseDrag(x, y, -sculpt_str, sculpt_dist, tool);
+				sculptedModels[sculpt]->MouseDrag(x, y, -sculpt_str, sculpt_dist, tool);
 			else
-				sculpt->MouseDrag(x, y, sculpt_str, sculpt_dist, tool);
+				sculptedModels[sculpt]->MouseDrag(x, y, sculpt_str, sculpt_dist, tool);
 			
 		
 		glPopMatrix();
