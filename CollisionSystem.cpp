@@ -13,6 +13,8 @@
 #include "CollisionSystem.h"
 #include "SculptObject.h"
 
+int spheresPerModel = 24;
+
 CollisionSystem::CollisionSystem(SculptObject** models) {
 	num_NonSunObjects = 5;
 	int i;
@@ -25,7 +27,7 @@ CollisionSystem::CollisionSystem(SculptObject** models) {
 	collisionModels = new CollisionModel*[8];
 	collisionModels[0] = simpleSphereModel(sphere, 1.22698890045f);
 	for (i = 1; i < 8; i++) {
-		collisionModels[i] = multiSphereModel(models[i - 1], 24);
+		collisionModels[i] = multiSphereModel(models[i - 1], spheresPerModel);
 	}
 
 	// default values
@@ -160,13 +162,12 @@ CollisionSystem::CollisionSystem(SculptObject** models) {
 			}
 			worldObjects[i].radius = radius;
 		}
-		printf("object %d radius is %f\n", i, worldObjects[i].radius);
 	}
 }
 
 CollisionSystem::CollisionModel* CollisionSystem::simpleSphereModel(
 		CollisionSystem::Model* base, float scale) {
-// determine full radius
+	// determine full radius
 	float radius = 0;
 	for (int j = 0; j < base->m_nNumPoint; j++) {
 		if (magnitude(&(base->m_pVertexArray[j])) > radius) {
@@ -187,10 +188,21 @@ CollisionSystem::CollisionModel* CollisionSystem::simpleSphereModel(
 
 CollisionSystem::CollisionModel* CollisionSystem::multiSphereModel(
 		SculptObject* base, int sphereCount) {
-// pick cluster indexes
+	// sweet, now sphere time
+	CollisionModel* ret = new CollisionModel;
+	ret->fullPolyModel = NULL;
+	ret->fullPolyModelSculpt = base;
+	ret->spheres = NULL;
+	updateMultiModel(ret, sphereCount);
+	return ret;
+}
+
+void CollisionSystem::updateMultiModel(CollisionModel* cm, int sphereCount) {
+	SculptObject* base = cm->fullPolyModelSculpt;
+	// pick cluster indexes
 	int* clusterIndexes = new int[base->m_nNumPoint];
 	int c, i;
-// pick random centers
+	// pick random centers
 	G308_Point* centers = pickRandomPoints(base->m_pVertexArray,
 			base->m_nNumPoint, sphereCount);
 	int* pointsInCluster = new int[sphereCount];
@@ -198,7 +210,6 @@ CollisionSystem::CollisionModel* CollisionSystem::multiSphereModel(
 	int pass = 0;
 	while (true) {
 		pass++;
-		printf("Pass %d...\n", pass);
 		for (c = 0; c < sphereCount; c++) {
 			pointsInCluster[c] = 0;
 		}
@@ -248,8 +259,8 @@ CollisionSystem::CollisionModel* CollisionSystem::multiSphereModel(
 		// and set new variance
 		prevVariance = newVariance;
 	}
-// now we make spheres
-// check each cluster center against the points in it
+	// now we make spheres
+	// check each cluster center against the points in it
 	float* maxDists = new float[sphereCount];
 	for (c = 0; c < sphereCount; c++) {
 		maxDists[c] = 0;
@@ -261,22 +272,20 @@ CollisionSystem::CollisionModel* CollisionSystem::multiSphereModel(
 			maxDists[clusterIndexes[i]] = dist;
 		}
 	}
-// sweet, now sphere time
-	CollisionModel* ret = new CollisionModel;
-	ret->fullPolyModel = NULL;
-	ret->fullPolyModelSculpt = base;
-	ret->sphereCount = sphereCount;
-	ret->spheres = new Sphere[sphereCount];
+	cm->sphereCount = sphereCount;
+	if (cm->spheres != NULL) {
+		delete[] cm->spheres;
+	}
+	cm->spheres = new Sphere[sphereCount];
 	for (c = 0; c < sphereCount; c++) {
-		ret->spheres[c].radius = maxDists[c];
-		ret->spheres[c].relativePosition.x = centers[c].x;
-		ret->spheres[c].relativePosition.y = centers[c].y;
-		ret->spheres[c].relativePosition.z = centers[c].z;
+		cm->spheres[c].radius = maxDists[c];
+		cm->spheres[c].relativePosition.x = centers[c].x;
+		cm->spheres[c].relativePosition.y = centers[c].y;
+		cm->spheres[c].relativePosition.z = centers[c].z;
 	}
 	delete[] maxDists;
 	delete[] centers;
 	delete[] clusterIndexes;
-	return ret;
 }
 
 G308_Point* CollisionSystem::pickRandomPoints(G308_Point* vertices, int count,
@@ -450,6 +459,19 @@ void CollisionSystem::step() {
 	render();
 }
 
+void CollisionSystem::updateAll() {
+	for (int i = 0; i <= num_NonSunObjects; i++) {
+		if (worldObjects[i].collisionModel->fullPolyModelSculpt != NULL) {
+			if (worldObjects[i].collisionModel->fullPolyModelSculpt->geometry_changed) {
+				worldObjects[i].collisionModel->fullPolyModelSculpt->geometry_changed =
+						false;
+				updateMultiModel(worldObjects[i].collisionModel,
+						spheresPerModel);
+			}
+		}
+	}
+}
+
 float CollisionSystem::floatRand(int min, int max, int precision) {
 	int modulo = (max - min + 1) * precision;
 	int randChoice = rand() % modulo;
@@ -457,7 +479,7 @@ float CollisionSystem::floatRand(int min, int max, int precision) {
 }
 
 void CollisionSystem::render() {
-// temp
+	// temp
 	//glEnable(GL_COLOR_MATERIAL);
 	//glColorMaterial(GL_FRONT_AND_BACK, GL_AMBIENT_AND_DIFFUSE);
 	for (int i = 0; i <= num_NonSunObjects; i++) {
@@ -693,8 +715,6 @@ void CollisionSystem::processPhysics() {
 			worldObjects[j].direction = newMovement;
 		}
 	}
-	printf("distance = %f\n",
-			distanceCalcP(worldObjects[1].position, worldObjects[0].position));
 }
 
 float CollisionSystem::dotProduct(G308_Vector* from, G308_Vector* to) {

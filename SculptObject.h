@@ -34,6 +34,7 @@ public:
 	int m_nNumNormal;
 	int m_nNumPolygon;
 	float current_colour[4];
+	bool geometry_changed;
 
 	SculptObject(void);
 	~SculptObject(void);

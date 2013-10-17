@@ -12,7 +12,7 @@ SculptObject::SculptObject(void) {
 
 	v_normal_faces = NULL;
 	v_vertex_faces = NULL;
-	
+
 
 	m_nNumPoint = m_nNumUV = m_nNumPolygon = 0;
 
@@ -43,6 +43,8 @@ SculptObject::SculptObject(void) {
 	FillColour();
 
 	SetCurrentColour(0.0, 0.5, 0.5, 0.5);
+
+	geometry_changed = false;
 }
 
 SculptObject::~SculptObject(void) {
@@ -297,7 +299,7 @@ void SculptObject::MouseDrag(int x, int y, float strength, float distance, int m
 			int n = (pixel[0]) + pixel[1] * 256 + pixel[2] * 65536;
 			Paint(n, distance*3);
 		}
-		
+
 	}
 }
 
@@ -327,7 +329,7 @@ void SculptObject::Sculpt(int poly, float strength, float max_dist, float cur_di
 				int v1 = m_pTriangles[poly].v1;
 				int v2 = v_vertex_faces[m_pTriangles[poly].v1][i];
 				if (v2 != v1) {
-					Sculpt(v2, strength, max_dist, cur_dist + calculateDistance(v1, v2)); 
+					Sculpt(v2, strength, max_dist, cur_dist + calculateDistance(v1, v2));
 				}
 			}
 
@@ -335,7 +337,7 @@ void SculptObject::Sculpt(int poly, float strength, float max_dist, float cur_di
 				int v1 = m_pTriangles[poly].v2;
 				int v2 = v_vertex_faces[m_pTriangles[poly].v2][i];
 				if (v2 != v1) {
-					Sculpt(v2, strength, max_dist, cur_dist + calculateDistance(v1, v2)); 
+					Sculpt(v2, strength, max_dist, cur_dist + calculateDistance(v1, v2));
 				}
 			}
 
@@ -343,10 +345,10 @@ void SculptObject::Sculpt(int poly, float strength, float max_dist, float cur_di
 				int v1 = m_pTriangles[poly].v3;
 				int v2 = v_vertex_faces[m_pTriangles[poly].v3][i];
 				if (v2 != v1) {
-					Sculpt(v2, strength, max_dist, cur_dist + calculateDistance(v1, v2)); 
+					Sculpt(v2, strength, max_dist, cur_dist + calculateDistance(v1, v2));
 				}
 			}
-
+			geometry_changed = true;
 		}
 	}
 }
@@ -363,7 +365,7 @@ void SculptObject::Paint(int pixel, int distance){
 				}
 			}
 		}
-		
+
 	}
 	glBindTexture(GL_TEXTURE_2D, display_texture);
 	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RGB, GL_FLOAT, texture);

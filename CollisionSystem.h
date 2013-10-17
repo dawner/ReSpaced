@@ -79,11 +79,13 @@ private:
 
 	CollisionModel* simpleSphereModel(Model*, float);
 	CollisionModel* multiSphereModel(SculptObject*, int);
+	void updateMultiModel(CollisionModel*, int);
 	G308_Point* pickRandomPoints(G308_Point*, int, int);
 
 public:
 	CollisionSystem(SculptObject**);
 	void step();
+	void updateAll();
 };
 
 #endif /* COLLISIONSYSTEM_H_ */

@@ -7,20 +7,20 @@
 # IPATH= -I/usr/pkg/include
 
 # Generic linux/uni
-# CC = g++
-# LPATH = -L/usr/pkg/lib
-# LDPATH = -Wl,-R/usr/pkg/lib
-# CFLAGS=-g -Wall
-# LIBS=-lGL -lGLU -lglut -ljpeg -lpng15 -lm
-# IPATH= -I/usr/pkg/include
+ CC = g++
+ LPATH = -L/usr/pkg/lib
+ LDPATH = -Wl,-R/usr/pkg/lib
+ CFLAGS=-g -Wall
+ LIBS=-lGL -lGLU -lglut -ljpeg -lpng15 -lm
+ IPATH= -I/usr/pkg/include
 
 # Windows (Dawn)
-CC = g++
-LPATH = -L/usr/pkg/lib
-LDPATH = -Wl,-R/usr/pkg/lib
-CFLAGS=-g -Wall
-LIBS=-lopengl32 -lglu32 -lglut32 -lm
-IPATH= -I/usr/pkg/include
+#CC = g++
+#LPATH = -L/usr/pkg/lib
+#LDPATH = -Wl,-R/usr/pkg/lib
+#CFLAGS=-g -Wall
+#LIBS=-lopengl32 -lglu32 -lglut32 -lm
+#IPATH= -I/usr/pkg/include
 
 all: Retraced
 
