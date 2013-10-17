@@ -41,7 +41,7 @@ int drag_y;
 float theta_x = 0.0;
 float theta_y = 0.0;
 
-float star_distance = 60; //distance of stars from origin
+float star_distance = 900; //distance of stars from origin
 
 void G308_Display();
 void G308_Reshape(int w, int h);
@@ -376,7 +376,7 @@ void updateMouse(int x, int y) {
 		glRotatef(theta_y, 0.0, 1.0, 0.0);
 
 		//Hold Alt to reverse direction.
-		if (glutGetModifiers() == GLUT_ACTIVE_ALT)
+		if (glutGetModifiers() == GLUT_ACTIVE_CTRL)
 			sculptedModels[sculpt]->MouseDrag(x, y, -sculpt_str, sculpt_dist,
 					tool);
 		else

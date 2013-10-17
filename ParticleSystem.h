@@ -24,7 +24,6 @@ private:
 		G308_RGBA colour;
 
 		bool is_flare;
-		G308_Point* past_positions;
 
 		//store links to particles on either side
 		Particle* next; 

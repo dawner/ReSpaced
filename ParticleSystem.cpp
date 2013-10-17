@@ -71,7 +71,7 @@ ParticleSystem::ParticleSystem(int num_particles, float star_dis) {
 	srand((unsigned)time(0)); 
 
 	//set up stars
-	num_stars = 2000;
+	num_stars = 3000;
 	star_distance=star_dis;
 	stars = (G308_Point*) malloc(sizeof(G308_Point)*num_stars);
 	for (int i=0;i<num_stars;++i){
@@ -123,16 +123,10 @@ void ParticleSystem::CreateParticle(){
 		p->life = (life*2.8 + life_variation*random());
 
 		p->is_flare=true;
-		p->past_positions=tails[tail_pointer];
 		tail_pointer+=1;
 		int max_num_flares = 1+((total_particles-1)/flare_n); //ceiling
 		if (tail_pointer==max_num_flares)
 			tail_pointer=0;
-		for(int i=0;i<flare_tail;++i){
-			p->past_positions[i].x=0;
-			p->past_positions[i].y=0;
-			p->past_positions[i].z=0;
-		}
 
 	}else{ //normal plasma particle
 
@@ -147,7 +141,6 @@ void ParticleSystem::CreateParticle(){
 
 		p->life = life + life_variation*random();
 		p->is_flare=false;
-		p->past_positions=NULL;
 	}
 	++particle_count;
 
@@ -271,16 +264,6 @@ void ParticleSystem::drawFlare(Particle* p,float rot_x, float rot_y){
 /* Updates a particles position, direction and life */
 void ParticleSystem::updateParticle(Particle* p) {
 
-	if (p->is_flare){
-		//update old positions
-		for(int i=0;i<flare_tail-1;++i){
-			p->past_positions[i] = p->past_positions[i+1];
-		}
-		p->past_positions[flare_tail-1].x = p->position.x;
-		p->past_positions[flare_tail-1].y = p->position.y;
-		p->past_positions[flare_tail-1].z = p->position.z;
-	}
-
 	p->position.x+=p->direction.x;
 	p->position.y+=p->direction.y;
 	p->position.z+=p->direction.z;
@@ -335,7 +318,7 @@ void ParticleSystem::drawStars(float rot_x, float rot_y){
 			//reverse particle rotations so billboards face camera
 			glRotatef(-stars[i].z,0,0,1);
 			glRotatef(-stars[i].x,1,0,0);
-
+			glScalef(25,25,25);
 			glBegin(GL_QUADS);
 				glVertex3f(particle_size, particle_size, 0);
 				glVertex3f(-particle_size, particle_size, 0); 
