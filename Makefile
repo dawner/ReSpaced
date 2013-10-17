@@ -24,14 +24,12 @@ IPATH= -I/usr/pkg/include
 
 all: Retraced
 
-Retraced: main.o CollisionSystem.o G308_Geometry.o ParticleSystem.o SculptObject.o
-	$(CC) -o Retraced main.o CollisionSystem.o G308_Geometry.o ParticleSystem.o SculptObject.o $(LIBS) $(LPATH) $(LDPATH)
+Retraced: main.o CollisionSystem.o ParticleSystem.o SculptObject.o
+	$(CC) -o Retraced main.o CollisionSystem.o ParticleSystem.o SculptObject.o $(LIBS) $(LPATH) $(LDPATH)
 main.o:
 	$(CC) -c $(CFLAGS) main.cpp $(IPATH)  
 CollisionSystem.o:
 	$(CC) -c $(CFLAGS) CollisionSystem.cpp $(IPATH)
-G308_Geometry.o:
-	$(CC) -c $(CFLAGS) G308_Geometry.cpp $(IPATH)
 ParticleSystem.o:
 	$(CC) -c $(CFLAGS) ParticleSystem.cpp $(IPATH)
 SculptObject.o:

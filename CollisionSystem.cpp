@@ -160,7 +160,7 @@ CollisionSystem::CollisionSystem(SculptObject** models) {
 			}
 			worldObjects[i].radius = radius;
 		}
-		printf("object %d radius is %f\n", i, worldObjects[i].radius);
+		// printf("object %d radius is %f\n", i, worldObjects[i].radius);
 	}
 }
 
@@ -198,7 +198,7 @@ CollisionSystem::CollisionModel* CollisionSystem::multiSphereModel(
 	int pass = 0;
 	while (true) {
 		pass++;
-		printf("Pass %d...\n", pass);
+		// printf("Pass %d...\n", pass);
 		for (c = 0; c < sphereCount; c++) {
 			pointsInCluster[c] = 0;
 		}
@@ -349,8 +349,8 @@ CollisionSystem::Model* CollisionSystem::loadModel(const char* filename) {
 	model->m_nNumPolygon = numFace;
 	model->m_nNumNormal = numNorm;
 
-	printf("Number of Point %d, UV %d, Normal %d, Face %d\n", numVert, numUV,
-			numNorm, numFace);
+	// printf("Number of Point %d, UV %d, Normal %d, Face %d\n", numVert, numUV,
+			// numNorm, numFace);
 //-------------------------------------------------------------
 //	Allocate memory for array
 //-------------------------------------------------------------
@@ -693,8 +693,8 @@ void CollisionSystem::processPhysics() {
 			worldObjects[j].direction = newMovement;
 		}
 	}
-	printf("distance = %f\n",
-			distanceCalcP(worldObjects[1].position, worldObjects[0].position));
+	// printf("distance = %f\n",
+			// distanceCalcP(worldObjects[1].position, worldObjects[0].position));
 }
 
 float CollisionSystem::dotProduct(G308_Vector* from, G308_Vector* to) {

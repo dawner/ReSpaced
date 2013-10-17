@@ -7,7 +7,6 @@
 #include <math.h>
 
 #include "define.h"
-#include "G308_Geometry.h"
 #include "SculptObject.h"
 #include "ParticleSystem.h"
 #include "CollisionSystem.h"
@@ -20,27 +19,16 @@ using namespace std;
 GLuint g_mainWnd;
 GLuint g_nWinWidth  = G308_WIN_WIDTH;
 GLuint g_nWinHeight = G308_WIN_HEIGHT;
-G308_Geometry* g_pGeometry = NULL;
-const char** object_files;
-int numObjects = 1;
 
 bool rotating=false;
 bool panning = false;
 bool zooming = false;
-bool rotation360 = false;
+
 G308_Point clickDown;
 G308_Point clickUp;
-int mouseX;
-int modifier_key;
-AXIS selected_axis;
-
-G308_Rotation cur_rotation;
 
 float FPS = 60.0;
 int lastUpdate = 0;
-
-G308_Point camera_initial;
-G308_Point camera_change;
 
 //Camera variables.
 G308_Point cam_position = {0.0, 0.0, 0.0};
@@ -54,7 +42,7 @@ int drag_y;
 float theta_x = 0.0;
 float theta_y = 0.0;
 
-float star_distance=30; //distance of stars from origin
+float star_distance=60; //distance of stars from origin
 
 void G308_Display() ;
 void G308_Reshape(int w, int h) ;
@@ -63,11 +51,6 @@ void G308_SetLight();
 void G308_mouseListener(int button, int state, int x, int y);
 void updateMouse(int, int);
 void G308_keyboardListener(unsigned char, int, int);
-
-G308_Object_Properties G308_Object_Details(const char*);
-// void load_textures(G308_Object_Properties*);
-int load_cubemap(char**);
-void set_material(float property[], float, float, float, float);
 
 //Sculpting variables.
 bool sculpt_mode = false;
@@ -80,7 +63,6 @@ float sculpt_dist = 5.0f;
 void SculptingLight();
 void colourMenu(int);
 
-// temp
 SculptObject* sculptedModels[7];
 
 //Particle System variables
@@ -94,16 +76,6 @@ CollisionSystem* collision_system = NULL;
 
 int main(int argc, char** argv)
 {
-	//assign static objects to be displayed
-	// object_files = (char*) malloc(sizeof(char) * 20 * numObjects; 
-	object_files = (const char**) malloc(sizeof(char*)*numObjects);
-	for (int i = 0; i < numObjects;++i){
-		object_files[i] = (const char*) malloc(20*sizeof(char)); //assuming filename length of 20 max
-	}
-	object_files[0]="Sphere.obj";
-
-	modifier_key=-1;
-
 	glutInit(&argc, argv);
     glutInitDisplayMode(GLUT_DOUBLE | GLUT_RGBA | GLUT_DEPTH);
     glutInitWindowSize(g_nWinWidth, g_nWinHeight);
@@ -115,16 +87,6 @@ int main(int argc, char** argv)
     glutMouseFunc(G308_mouseListener);
 	glutMotionFunc(updateMouse);
 	glutKeyboardFunc(G308_keyboardListener);
-
-	camera_initial.x = 10;
-	camera_initial.y = 10;
-	camera_initial.z = 32;
-	camera_change.x = 0;
-	camera_change.y = 0;
-	camera_change.z = 0;
-	
-
-	g_pGeometry = new G308_Geometry(numObjects);
 
 	//Sculpt stuff.
 	for (int i = 0; i < 7; i++){
@@ -150,7 +112,6 @@ int main(int argc, char** argv)
 	sculptedModels[6]->ReadOBJ("earthish.obj");
 	sculptedModels[6]->LoadTexture("earthish.txt");
 
-
 	particle_system = new ParticleSystem(num_particles,star_distance);
 	collision_system = new CollisionSystem(sculptedModels);
 	glutCreateMenu(colourMenu);
@@ -166,137 +127,18 @@ int main(int argc, char** argv)
 	glutAddMenuEntry("Black", 9);
 	glutAddMenuEntry("White", 10);
 	
-	
-	// char* filenames[6] = {"right.jpg","left.jpg","bot.jpg","top.jpg","front.jpg","back.jpg"};
-	// int environment = load_cubemap(filenames);
-	// g_pGeometry->SetEnvironment(environment); 
-	// g_pGeometry->SetupSkyBox();
-	for (int i = 0; i < numObjects;++i){
-		G308_Object_Properties props = G308_Object_Details(object_files[i]);
-		// load_textures(&props);
-		g_pGeometry->ReadOBJ(i, object_files[i],props); // 1) read OBJ function
-		g_pGeometry->CreateGLPolyGeometry(i); // 2) create GL Geometry as polygon
-		g_pGeometry->CreateGLWireGeometry(i); // 3) create GL Geometry as wireframe
-	}
 	glDisable(GL_TEXTURE_2D);
 
 	G308_SetLight();
 	G308_SetCamera();
 	glutMainLoop();
 
-	if(g_pGeometry != NULL) delete g_pGeometry;
-
     return 0;
-}
-
-// int load_cubemap(char** filenames){
-	
-// 	GLuint texName;
-// 	TextureInfo* t = (TextureInfo*) malloc(sizeof(TextureInfo)*6);
-
-// 	GLenum cube[6] = {  GL_TEXTURE_CUBE_MAP_POSITIVE_X,
-// 	                    GL_TEXTURE_CUBE_MAP_NEGATIVE_X,
-// 	                    GL_TEXTURE_CUBE_MAP_POSITIVE_Y,
-// 	                    GL_TEXTURE_CUBE_MAP_NEGATIVE_Y,
-// 	                    GL_TEXTURE_CUBE_MAP_POSITIVE_Z,
-// 	                    GL_TEXTURE_CUBE_MAP_NEGATIVE_Z };
-
-//     glEnable(GL_TEXTURE_CUBE_MAP);
-//     glGenTextures(1, &texName);
-//     glBindTexture(GL_TEXTURE_CUBE_MAP, texName);
-//     glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-//     glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-//     glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-//     glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-//     glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
-	
-//     // Load Cube Map images
-//     for(int j=0; j < 6; j++){
-// 		unsigned int k;
-// 		for (k = 0; k < strlen(filenames[j]); k++) {
-// 			if (filenames[j][k] == '.') {
-// 				break;
-// 			}
-// 		}
-// 		char extension[5];
-// 		strcpy(extension, &filenames[j][k + 1]);
-// 		if (strcmp(extension, "jpg") == 0 || strcmp(extension, "jpeg") == 0)
-// 			loadTextureFromJPEG(filenames[j], &(t[j]));
-// 		else if (strcmp(extension, "png") == 0)
-// 			loadTextureFromPNG(filenames[j], &(t[j]));
-// 		else {
-// 			printf("Invalid format. Only supports JPEG and PNG.\n");
-// 			exit(1);
-// 		}
-//     	glTexImage2D(cube[j], 0, GL_RGB, t[j].width, t[j].height, 0, GL_RGB, GL_UNSIGNED_BYTE, t[j].textureData);
-
-// 		free(t[j].textureData);
-//     }
-// 	return texName  ;
-// }
-
-// void load_textures(G308_Object_Properties* props){
-
-// 	char* filename = props->texture_filename;
-// 	if (filename==NULL)
-// 		return; //no texture for this object
-	
-// 	GLuint texName;
-// 	TextureInfo t;
-// 	unsigned int i;
-// 	for (i = 0; i < strlen(filename); i++) {
-// 		if (filename[i] == '.') {
-// 			break;
-// 		}
-// 	}
-// 	char extension[5];
-// 	strcpy(extension, &filename[i + 1]);
-
-// 	if (strcmp(extension, "jpg") == 0 || strcmp(extension, "jpeg") == 0)
-// 		loadTextureFromJPEG(filename, &t);
-// 	else if (strcmp(extension, "png") == 0)
-// 		loadTextureFromPNG(filename, &t);
-// 	else {
-// 		printf("Invalid format. Only supports JPEG and PNG.\n");
-// 		exit(1);
-// 	}
-
-// 	glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
-// 	glGenTextures(1, &texName);
-// 	glBindTexture(GL_TEXTURE_2D, texName);
-// 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
-// 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
-// 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-// 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-
-// 	//Only useful for PNG files, since JPEG doesn't support alpha
-// 	if (t.hasAlpha) {
-// 		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, t.width, t.height, 0, GL_RGBA,
-// 				GL_UNSIGNED_BYTE, t.textureData);
-// 	} else {
-// 		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, t.width, t.height, 0, GL_RGB,
-// 				GL_UNSIGNED_BYTE, t.textureData);
-// 	}
-// 	//Once the texture has been loaded by GL, we don't need this anymore.
-// 	free(t.textureData);
-
-// 	props->texture=texName;
-// 	props->has_alpha = t.hasAlpha;
-
-// }
-
-
-void set_material(float* property, float a, float b, float c, float d){
-	property[0]=a;
-	property[1]=b;
-	property[2]=c;
-	property[3]=d;
 }
 
 // Display function
 void G308_Display()
 {
-
 	int currentTime = glutGet(GLUT_ELAPSED_TIME);
 	if ((currentTime-lastUpdate) > 1000/FPS){
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
@@ -324,10 +166,6 @@ void G308_Display()
 		glRotatef(theta_x, 1.0, 0.0, 0.0);
 		glRotatef(theta_y, 0.0, 1.0, 0.0);
 
-		//glRotatef(cur_rotation.x,0,1,0);
-
-		// g_pGeometry->RenderGeometry(false);
-
 		//Sculpting mode stuff goes in here.
 		if (sculpt_mode) {
 			sculptedModels[sculpt]->RenderGeometry(0);
@@ -337,22 +175,17 @@ void G308_Display()
 
 			G308_SetLight();
 
-			//Removed predrawn sculpt objects in favor of having physics system draw them.
-
-			//particle stuff
+			collision_system->step();
+			//particle stuff drawn after to allow for alpha
 			glColor3f(0,0,0);
 			for(int i=0;i<particles_per_frame;++i){
 				particle_system->CreateParticle();
 			}
-
 			particle_system->display(theta_x,theta_y);
-			collision_system->step();
 		}
 		glPopMatrix();
 
 		glMatrixMode(GL_MODELVIEW);
-
-		// g_pGeometry->SkyBox();
 
 		glDisable(GL_DEPTH_TEST);
 		glDisable(GL_LIGHTING);
@@ -361,14 +194,6 @@ void G308_Display()
 
 		glutSwapBuffers();
 		glutPostRedisplay();
-		if (rotation360){
-			cur_rotation.x=cur_rotation.x+1;
-			if (cur_rotation.x>360){
-				cur_rotation.x=0;
-				rotation360=false;
-				modifier_key=-1;
-			}
-		}
 
 		lastUpdate=currentTime;
 	}
@@ -553,7 +378,6 @@ void updateMouse(int x, int y){
 			else
 				sculptedModels[sculpt]->MouseDrag(x, y, sculpt_str, sculpt_dist, tool);
 			
-		
 		glPopMatrix();
 	}
 
@@ -580,11 +404,9 @@ void updateMouse(int x, int y){
 	}
 	glutPostRedisplay( );
 
-	
 	clickDown.x=x;
 	clickDown.y=y;
 }
-
 
 // Set Camera Position
 void G308_SetCamera()
@@ -596,115 +418,7 @@ void G308_SetCamera()
 	glLoadIdentity();
 
 	gluLookAt(0.0, 0.0, 50.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0);
-	//gluLookAt(camera_initial.x+camera_change.x,camera_initial.y+camera_change.y, camera_initial.z+camera_change.z, -2.0, -1.5, 0.0, 0.0, 1.0, 0.0);
 }
-
-//----------------OBJECT PROPERITES-----------------//
-
-// Returns the relevant translation depending on the given object filename
-// to modify an objects position, the figures returned here would need to be changed
-G308_Object_Properties G308_Object_Details(const char* object_name){
-	G308_Object_Properties prop;
-	prop.translation = (G308_Point*) malloc(sizeof(G308_Point));
-	prop.rotation = (G308_Point*) malloc(sizeof(G308_Point));
-	prop.scale = (G308_Point*) malloc(sizeof(G308_Point));
-	prop.scale->x=1;
-	prop.scale->y=1;
-	prop.scale->z=1;
-	//colours
-	prop.colour = (G308_RGBA*) malloc(sizeof(G308_RGBA));
-	prop.colour->r=1;
-	prop.colour->g=1;
-	prop.colour->b=1;
-	prop.colour->a=1;
-
-	prop.texture_filename=NULL;
-	prop.texture=0;
-	prop.texture_multiplier=1;
-
-	if (strcmp(object_name,"Table.obj")==0){
-		prop.translation->x=0;
-		prop.translation->y=-2;
-		prop.translation->z=5;
-		prop.scale->x=1.2;
-		prop.scale->z=1.2;
-		prop.texture_filename ="wood.jpg";
-		prop.texture_multiplier=12;
-		prop.is_metallic=false;
-	}else if (strcmp(object_name,"Sphere.obj")==0){
-		prop.translation->x=-5;
-		prop.translation->y=0;
-		prop.translation->z=7;
-		prop.colour->r=1.0;
-		prop.colour->g=0.6; 
-		prop.colour->b=0.1;
-		prop.scale->x=1.2;
-		prop.scale->x=1.2;
-		prop.scale->z=1.2;
-		prop.diffuse = (float*) malloc(sizeof(float)*4);
-		prop.specular = (float*) malloc(sizeof(float)*4);
-		prop.shininess = (float*) malloc(sizeof(float));
-		set_material(prop.diffuse, 0.7, 0.4, 0.2, 1.0);
-		set_material(prop.specular, 1,1,1,0.5);
-		prop.shininess[0]= 30;
-		prop.is_metallic=true;
-	}else if (strcmp(object_name,"Torus.obj")==0){
-		prop.translation->x=2;
-		prop.translation->y=-1;
-		prop.translation->z=9;
-		prop.colour->r=1;
-		prop.colour->g=0; 
-		prop.colour->b=0;
-		prop.diffuse = (float*) malloc(sizeof(float)*4);
-		prop.ambient = (float*) malloc(sizeof(float)*4);
-		prop.specular = (float*) malloc(sizeof(float)*4);
-		prop.shininess = (float*) malloc(sizeof(float));
-		set_material(prop.ambient, 0.0, 0.0, 0.0, 1.0);
-		set_material(prop.diffuse, 0.5, 0.0,0.0, 1.0);
-		set_material(prop.specular, 1.0,1.0,1.0 ,1.0);
-		prop.shininess[0]= 128;
-		prop.is_metallic=false;
-	}else if (strcmp(object_name,"Bunny.obj")==0){
-		prop.colour->a=0.75;
-		prop.translation->x=-2;
-		prop.translation->y=-1.5;
-		prop.translation->z=1;
-		prop.diffuse = (float*) malloc(sizeof(float)*4);
-		prop.specular = (float*) malloc(sizeof(float)*4);
-		prop.shininess = (float*) malloc(sizeof(float));
-		set_material(prop.diffuse, 0.5,0.4,0.4, 1.0);
-		set_material(prop.specular, 0.5,0.5,0.5,0.5);
-		prop.shininess[0]= 20;
-		prop.is_metallic=false;
-	}else if (strcmp(object_name,"Teapot.obj")==0){
-		prop.translation->x=-7;
-		prop.translation->y=-1.5;
-		prop.translation->z=-3;
-		prop.colour->r=0.11;
-		prop.colour->g=0.22; 
-		prop.colour->b=0.72;
-		prop.scale->x=0.9;
-		prop.scale->y=0.9;
-		prop.scale->z=0.9;
-		prop.diffuse = (float*) malloc(sizeof(float)*4);
-		prop.specular = (float*) malloc(sizeof(float)*4);
-		prop.shininess = (float*) malloc(sizeof(float));
-		set_material(prop.diffuse, 0.5, 0.5,0.5, 1.0);
-		set_material(prop.specular, 1,1,1,1.0);
-		prop.shininess[0]= 100;
-		prop.is_metallic=true;
-	}else if (strcmp(object_name,"Box.obj")==0){
-		prop.translation->x=4;
-		prop.translation->y=0;
-		prop.translation->z=-1.5;
-		prop.texture_multiplier=5;
-		prop.texture_filename ="brick.jpg";
-		prop.is_metallic=false;
-	}
-	return prop;
-}
-
-
 
 
 
