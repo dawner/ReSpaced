@@ -22,10 +22,10 @@
 #LIBS=-lopengl32 -lglu32 -lglut32 -lm
 #IPATH= -I/usr/pkg/include
 
-all: Retraced
+all: Respaced
 
-Retraced: main.o CollisionSystem.o ParticleSystem.o SculptObject.o
-	$(CC) -o Retraced main.o CollisionSystem.o ParticleSystem.o SculptObject.o $(LIBS) $(LPATH) $(LDPATH)
+Respaced: main.o CollisionSystem.o ParticleSystem.o SculptObject.o
+	$(CC) -o Respaced main.o CollisionSystem.o ParticleSystem.o SculptObject.o $(LIBS) $(LPATH) $(LDPATH)
 main.o:
 	$(CC) -c $(CFLAGS) main.cpp $(IPATH)  
 CollisionSystem.o:
@@ -36,5 +36,5 @@ SculptObject.o:
 	$(CC) -c $(CFLAGS) SculptObject.cpp $(IPATH)
 clean :
 	rm -rf *.o
-	rm -f Retraced
-	rm -f Retraced.exe
+	rm -f Respaced
+	rm -f Respaced.exe

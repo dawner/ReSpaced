@@ -58,6 +58,7 @@ bool sculpting = false;
 int tool = 1;
 float sculpt_str = 0.001f;
 float sculpt_dist = 5.0f;
+bool ctrl_pressed = false;
 
 void SculptingLight();
 void colourMenu(int);
@@ -343,7 +344,7 @@ void G308_keyboardListener(unsigned char key, int x, int y) {
 }
 
 void G308_mouseListener(int button, int state, int x, int y) {
-
+	ctrl_pressed = (glutGetModifiers() == GLUT_ACTIVE_CTRL);
 	rotating = false;
 	panning = false;
 	zooming = false;
@@ -376,7 +377,7 @@ void updateMouse(int x, int y) {
 		glRotatef(theta_y, 0.0, 1.0, 0.0);
 
 		//Hold Alt to reverse direction.
-		if (glutGetModifiers() == GLUT_ACTIVE_CTRL)
+		if (ctrl_pressed)
 			sculptedModels[sculpt]->MouseDrag(x, y, -sculpt_str, sculpt_dist,
 					tool);
 		else
