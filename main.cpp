@@ -83,6 +83,9 @@ void colourMenu(int);
 SculptObject *dirt_planet;
 SculptObject *asteroid1;
 
+// temp
+SculptObject* sculptedModels[3];
+
 //Particle System variables
 ParticleSystem* particle_system = NULL;
 int num_particles=3000;
@@ -139,9 +142,13 @@ int main(int argc, char** argv)
 	asteroid1->ReadOBJ("asteroid1.obj");
 	asteroid1->LoadTexture("asteroid1.txt");
 
+	sculptedModels[0] = sculpt;
+	sculptedModels[1] = dirt_planet;
+	sculptedModels[2] = asteroid1;
+
 
 	particle_system = new ParticleSystem(num_particles,star_distance);
-	collision_system = new CollisionSystem();
+	collision_system = new CollisionSystem(sculptedModels);
 	glutCreateMenu(colourMenu);
 	glutAddMenuEntry("Red", 0);
 	glutAddMenuEntry("Orange", 1);
@@ -326,19 +333,7 @@ void G308_Display()
 
 			G308_SetLight();
 
-			//Sculpted objects. Physics system will probably want to do something with these.
-			//Feel free to change how these are handled.
-			glPushMatrix();
-			glTranslatef(5.0f, 0.0f, 0.0f);
-			glScalef(0.5f, 0.5f, 0.5f);
-			dirt_planet->RenderGeometry(0);
-			glPopMatrix();
-
-			glPushMatrix();
-			glTranslatef(5.0f, 0.0f, 5.0f);
-			glScalef(0.25f, 0.25f, 0.25f);
-			asteroid1->RenderGeometry(0);
-			glPopMatrix();
+			//Removed predrawn sculpt objects in favor of having physics system draw them.
 
 			//particle stuff
 			glColor3f(0,0,0);

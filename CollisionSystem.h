@@ -12,6 +12,7 @@
 
 #include "define.h"
 #include <GL/glut.h>
+#include "SculptObject.h"
 
 class CollisionSystem {
 private:
@@ -31,6 +32,18 @@ private:
 		int m_nNumPolygon;
 	} Model;
 
+	typedef struct Sphere {
+		G308_Point relativePosition;
+		float radius;
+	};
+
+	typedef struct CollisionModel {
+		int sphereCount;
+		Sphere* spheres;
+		Model* fullPolyModel;
+		SculptObject* fullPolyModelSculpt;
+	};
+
 	typedef struct Object {
 		G308_Point position;
 		G308_Point rotation;
@@ -38,9 +51,9 @@ private:
 		float speed;
 		float weight;
 
-		Model* displayModel;
+		SculptObject* displayModel;
 		float displayModelScale;
-		Model* collisionModel;
+		CollisionModel* collisionModel;
 		float collisionModelScale;
 
 		// for bogus implementation
@@ -55,15 +68,22 @@ private:
 
 	void processPhysics();
 	void processCollisions();
+	bool detectCollision(int, int);
+	void reactCollision(int, int);
 	void render();
-	void displayModel(Model*);
 	void normalize(G308_Vector*);
 	float magnitude(G308_Vector*);
+	float dotProduct(G308_Vector*, G308_Vector*);
 
-	float distanceCalc(G308_Point, G308_Point);
+	float distanceCalcP(G308_Point, G308_Point);
+	float distanceCalc(G308_Vector, G308_Vector);
+
+	CollisionModel* simpleSphereModel(Model*, float);
+	CollisionModel* multiSphereModel(SculptObject*, float, int);
+	G308_Point* pickRandomPoints(G308_Point*, int, int);
 
 public:
-	CollisionSystem(void);
+	CollisionSystem(SculptObject**);
 	void step();
 };
 
