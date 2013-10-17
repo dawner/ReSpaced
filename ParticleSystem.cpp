@@ -71,13 +71,13 @@ ParticleSystem::ParticleSystem(int num_particles, float star_dis) {
 	srand((unsigned)time(0)); 
 
 	//set up stars
-	num_stars = 1000;
+	num_stars = 2000;
 	star_distance=star_dis;
 	stars = (G308_Point*) malloc(sizeof(G308_Point)*num_stars);
 	for (int i=0;i<num_stars;++i){
-		stars[i].x=180.0*((rand()%100)/-100.0); //only allow negative x rotation, to face camera
+		stars[i].x=180.0*random(); //only allow negative x rotation, to face camera
 		stars[i].y=0;
-		stars[i].z=90.0*random();;
+		stars[i].z=180.0*random();
 	}
 }
 
@@ -167,15 +167,7 @@ void ParticleSystem::display(float rot_x, float rot_y){
 	Particle* p = last_particle;
 	while(p!=NULL){
 		glPushMatrix();
-			positionParticle(p, rot_x, rot_y);
-			drawParticle(p);
-			glRotatef(p->rotation.x,1,0,0);
-			glRotatef(p->rotation.z,0,0,1);
-			glTranslatef(-p->position.x, -p->position.y, -p->position.z);
-
-			if(p->is_flare){
-				drawFlare(p);
-			}
+			drawParticle(p,rot_x, rot_y);
 		glPopMatrix();
 
 		updateParticle(p);
@@ -206,31 +198,36 @@ float ParticleSystem::random(){
 	return ((rand()%200)-100)/100.0;
 }
 
-/* Performs all necessary transformations to get the particle into position 
-/ and facing the correct direction                                         */
-void ParticleSystem::positionParticle(Particle* p, float rot_x, float rot_y){
+/*Performs all necessary transformations to get the particle into position 
+/ and facing the correct direction, then draws the actual particle shape  */
+void ParticleSystem::drawParticle(Particle* p,float rot_x, float rot_y){
 	glTranslatef(emitter_position.x,emitter_position.y,emitter_position.z);
 			
 	//reverse camera rotations, to keep particles on viewing side
-	glRotatef(-rot_y, 0.0, 1.0, 0.0);
-	glRotatef(-rot_x, 1.0, 0.0, 0.0);
+    glRotatef(-rot_y, 0.0, 1.0, 0.0);
+    glRotatef(-rot_x, 1.0, 0.0, 0.0);		
 
 	glRotatef(p->rotation.x,1,0,0);
 	glRotatef(p->rotation.z,0,0,1);
 	glTranslatef(0,sun_radius,0);
 	glTranslatef(p->position.x, p->position.y, p->position.z);
-	glColor3f(p->colour.r,p->colour.g,p->colour.b);
 
-	//reverse particle rotations so billboards face camera
+	//reverse rotations so billboards face camera
 	glRotatef(-p->rotation.z,0,0,1);
 	glRotatef(-p->rotation.x,1,0,0);
-}
 
-/* Draw the actual particle shape               */
-void ParticleSystem::drawParticle(Particle* p){
-	if (p->is_flare)
+	glColor3f(p->colour.r,p->colour.g,p->colour.b);
+
+	if (p->is_flare){
 		glutSolidSphere(particle_size*2.0,10, 10);
-	else{
+
+		glRotatef(p->rotation.x,1,0,0);
+		glRotatef(p->rotation.z,0,0,1);
+		glTranslatef(-p->position.x, -p->position.y, -p->position.z);
+
+		drawFlare(p,rot_x, rot_y);
+			
+	}else{
 		//draw square as billboard
 		glBegin(GL_QUADS);
 			glVertex3f(particle_size, particle_size, 0);
@@ -239,25 +236,35 @@ void ParticleSystem::drawParticle(Particle* p){
 			glVertex3f(particle_size, -particle_size, 0); 
 		glEnd();
 	}
+
+
 }
 
 /* Draw solar flare's tail                     */
-void ParticleSystem::drawFlare(Particle* p){
+void ParticleSystem::drawFlare(Particle* p,float rot_x, float rot_y){
 	float alpha_delta = 0.6/flare_tail;
-	float cur_alpha = alpha_delta;
+	float cur_alpha = 0.6;
+	G308_Vector dir;
+	dir.x =p->direction.x-global_force.x;
+	dir.y = p->direction.y-global_force.y;
+	dir.z = p->direction.z-global_force.z;
+	G308_Point pos;
+	pos.x = p->position.x-dir.x;
+	pos.y = p->position.y-dir.y;
+	pos.z = p->position.z-dir.z;
 	for (int i=0;i<flare_tail;++i){
+		dir.x = dir.x-global_force.x;
+		dir.y = dir.y-global_force.y;
+		dir.z = dir.z-global_force.z;
+		pos.x = pos.x-dir.x;
+		pos.y = pos.y-dir.y;
+		pos.z = pos.z-dir.z;
 		glColor4f(p->colour.r,p->colour.g,p->colour.b,cur_alpha);
-		glTranslatef(p->past_positions[i].x, p->past_positions[i].y, p->past_positions[i].z);
-		//reverse particle rotations so billboards face camera
-		glRotatef(-p->rotation.z,0,0,1);
-		glRotatef(-p->rotation.x,1,0,0);
-
+		glTranslatef(pos.x, pos.y, pos.z);
 		glutSolidSphere(particle_size*2.0,5, 5);
 
-		glRotatef(p->rotation.x,1,0,0);
-		glRotatef(p->rotation.z,0,0,1);
-		glTranslatef(-p->past_positions[i].x,-p->past_positions[i].y, -p->past_positions[i].z);
-		cur_alpha+=alpha_delta;
+		glTranslatef(-pos.x, -pos.y, -pos.z);
+		cur_alpha-=alpha_delta;
 	}
 }
 
@@ -321,14 +328,10 @@ ParticleSystem::Particle* ParticleSystem::removeDead(Particle* p) {
 void ParticleSystem::drawStars(float rot_x, float rot_y){
 	for (int i=0;i<num_stars;++i){
 		glPushMatrix();
-			//reverse camera rotations, to keep particles on viewing side
-			glRotatef(-rot_y, 0.0, 1.0, 0.0);
-			glRotatef(-rot_x, 1.0, 0.0, 0.0);
 			glRotatef(stars[i].x,1,0,0);
 			glRotatef(stars[i].z,0,0,1);
 			glTranslatef(0,star_distance,0);
 			glColor3f(1,1,1);
-
 			//reverse particle rotations so billboards face camera
 			glRotatef(-stars[i].z,0,0,1);
 			glRotatef(-stars[i].x,1,0,0);

@@ -65,9 +65,8 @@ private:
 	float star_distance;
 
 	float random();
-	void positionParticle(Particle*, float, float);
-	void drawParticle(Particle*);
-	void drawFlare(Particle*);
+	void drawParticle(Particle*,float, float);
+	void drawFlare(Particle*,float, float);
 	void drawStars(float rot_x, float rot_y);
 	void updateParticle(Particle*);
 	Particle* removeDead(Particle*);
