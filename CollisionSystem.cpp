@@ -16,7 +16,7 @@
 int spheresPerModel = 24;
 
 CollisionSystem::CollisionSystem(SculptObject** models) {
-	num_NonSunObjects = 25;
+	num_NonSunObjects = 18;
 	int i;
 
 	worldObjects = (Object*) malloc(sizeof(Object) * (num_NonSunObjects + 1));
