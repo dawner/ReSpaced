@@ -42,6 +42,7 @@ private:
 		Sphere* spheres;
 		Model* fullPolyModel;
 		SculptObject* fullPolyModelSculpt;
+		float scale;
 	};
 
 	typedef struct Object {
@@ -78,9 +79,10 @@ private:
 	float distanceCalc(G308_Vector, G308_Vector);
 
 	CollisionModel* simpleSphereModel(Model*, float);
-	CollisionModel* multiSphereModel(SculptObject*, int);
+	CollisionModel* multiSphereModel(SculptObject*, int, float);
 	void updateMultiModel(CollisionModel*, int);
 	G308_Point* pickRandomPoints(G308_Point*, int, int);
+	float orbitalVelocity(int, int);
 
 public:
 	CollisionSystem(SculptObject**);

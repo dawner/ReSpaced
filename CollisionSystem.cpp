@@ -14,9 +14,10 @@
 #include "SculptObject.h"
 
 int spheresPerModel = 24;
+float gconstant = 0.000000067;
 
 CollisionSystem::CollisionSystem(SculptObject** models) {
-	num_NonSunObjects = 5;
+	num_NonSunObjects = 18;
 	int i;
 
 	worldObjects = (Object*) malloc(sizeof(Object) * (num_NonSunObjects + 1));
@@ -27,7 +28,14 @@ CollisionSystem::CollisionSystem(SculptObject** models) {
 	collisionModels = new CollisionModel*[8];
 	collisionModels[0] = simpleSphereModel(sphere, 1.22698890045f);
 	for (i = 1; i < 8; i++) {
-		collisionModels[i] = multiSphereModel(models[i - 1], spheresPerModel);
+		float scale = 1;
+		if (i >= 2 && i <= 4) {
+			scale = 0.25; // asteroid
+		} else if (i >= 5 && i <= 7) {
+			scale = 0.5; // planet
+		}
+		collisionModels[i] = multiSphereModel(models[i - 1], spheresPerModel,
+				scale);
 	}
 
 	// default values
@@ -55,16 +63,16 @@ CollisionSystem::CollisionSystem(SculptObject** models) {
 	worldObjects[0].collisionModel = collisionModels[0]; // basic sphere not used anywhere else
 
 	// planets
-	worldObjects[1].position.x = -5;
-	worldObjects[1].position.y = -5;
+	worldObjects[1].position.x = -3.5;
+	worldObjects[1].position.y = -3.5;
 	worldObjects[1].displayModel = models[5];
 	worldObjects[1].collisionModel = collisionModels[6];
 	worldObjects[1].direction.x = -5;
 	worldObjects[1].direction.y = 5;
 	worldObjects[1].direction.z = 0;
 	normalize(&worldObjects[1].direction);
-	worldObjects[1].speed = 0.0284;
-	worldObjects[1].weight = 1000;
+	worldObjects[1].speed = orbitalVelocity(0, 1);
+	worldObjects[1].weight = 50;
 
 	worldObjects[2].position.x = 5;
 	worldObjects[2].position.y = -5;
@@ -74,21 +82,21 @@ CollisionSystem::CollisionSystem(SculptObject** models) {
 	worldObjects[2].direction.y = -5;
 	worldObjects[2].direction.z = 0;
 	normalize(&worldObjects[2].direction);
-	worldObjects[2].speed = 0.0284;
-	worldObjects[2].weight = 1000;
+	worldObjects[2].speed = orbitalVelocity(0, 2);
+	worldObjects[2].weight = 100;
 
-	worldObjects[3].position.x = 5;
-	worldObjects[3].position.y = 5;
+	worldObjects[3].position.x = 6.5;
+	worldObjects[3].position.y = 6.5;
 	worldObjects[3].displayModel = models[6];
 	worldObjects[3].collisionModel = collisionModels[7];
 	worldObjects[3].direction.x = 5;
 	worldObjects[3].direction.y = -5;
 	worldObjects[3].direction.z = 0;
 	normalize(&worldObjects[3].direction);
-	worldObjects[3].speed = 0.0284;
-	worldObjects[3].weight = 1000;
+	worldObjects[3].speed = orbitalVelocity(0, 3);
+	worldObjects[3].weight = 200;
 
-	// static meteors
+	// static meteors (collision system)
 	worldObjects[4].position.x = -8;
 	worldObjects[4].position.y = 8;
 	worldObjects[4].position.z = 8;
@@ -97,8 +105,8 @@ CollisionSystem::CollisionSystem(SculptObject** models) {
 	worldObjects[4].direction.x = 1;
 	worldObjects[4].direction.y = -1;
 	normalize(&worldObjects[4].direction);
-	worldObjects[4].speed = 0.2;
-	worldObjects[4].weight = 20;
+	worldObjects[4].speed = 0.06;
+	worldObjects[4].weight = 2;
 
 	worldObjects[5].position.x = 8;
 	worldObjects[5].position.y = 0;
@@ -106,25 +114,34 @@ CollisionSystem::CollisionSystem(SculptObject** models) {
 	worldObjects[5].displayModel = models[2];
 	worldObjects[5].collisionModel = collisionModels[3];
 	worldObjects[5].direction.x = -1;
-	worldObjects[5].speed = 0.05;
-	worldObjects[5].weight = 20;
+	worldObjects[5].speed = 0.035;
+	worldObjects[5].weight = 2;
 
-	// meteors
+	// meteor belt
+	int numInBelt = num_NonSunObjects - 5;
 	for (i = 6; i <= num_NonSunObjects; i++) {
-		worldObjects[i].position.x = floatRand(-10, 10, 1000);
-		worldObjects[i].position.y = floatRand(-10, 10, 1000);
-		worldObjects[i].position.z = floatRand(-10, 10, 1000);
-		worldObjects[i].position.x = i * 0.5;
+		worldObjects[i].position.x = cos(
+				(360.0 / numInBelt) * PI / 180 * (i - 6)) * 12;
+		worldObjects[i].position.y = sin(
+				(360.0 / numInBelt) * PI / 180 * (i - 6)) * 12;
+		worldObjects[i].position.z = 0;
 		worldObjects[i].weight = 0.01;
 
-		worldObjects[i].direction.x = floatRand(-10, 10, 1000);
-		worldObjects[i].direction.y = floatRand(-10, 10, 1000);
-		worldObjects[i].direction.z = floatRand(-10, 10, 1000);
+		worldObjects[i].direction.x = 1;
+		if (worldObjects[i].position.y == 0) {
+			worldObjects[i].direction.x = 0;
+			worldObjects[i].direction.y = 1;
+		} else {
+			worldObjects[i].direction.y = -worldObjects[i].position.x
+					/ worldObjects[i].position.y;
+		}
+		worldObjects[i].direction.z = 0;
 		normalize(&(worldObjects[i].direction));
-		worldObjects[i].speed = 0.01 * floatRand(0, 3, 1000);
+		worldObjects[i].speed = orbitalVelocity(0, i);
 
-		worldObjects[i].displayModel = models[1];
-		worldObjects[i].collisionModel = collisionModels[2];
+		int astModel = rand() % 3;
+		worldObjects[i].displayModel = models[astModel + 1];
+		worldObjects[i].collisionModel = collisionModels[astModel + 2];
 	}
 
 // bounding spheres
@@ -165,6 +182,15 @@ CollisionSystem::CollisionSystem(SculptObject** models) {
 	}
 }
 
+float CollisionSystem::orbitalVelocity(int orbited, int orbiting) {
+	float dist = distanceCalcP(worldObjects[orbited].position,
+			worldObjects[orbiting].position);
+	return sqrt(
+			pow(worldObjects[orbited].weight, 2) * gconstant
+					/ (worldObjects[orbited].weight
+							+ worldObjects[orbiting].weight) / dist);
+}
+
 CollisionSystem::CollisionModel* CollisionSystem::simpleSphereModel(
 		CollisionSystem::Model* base, float scale) {
 	// determine full radius
@@ -187,12 +213,13 @@ CollisionSystem::CollisionModel* CollisionSystem::simpleSphereModel(
 }
 
 CollisionSystem::CollisionModel* CollisionSystem::multiSphereModel(
-		SculptObject* base, int sphereCount) {
+		SculptObject* base, int sphereCount, float scale) {
 	// sweet, now sphere time
 	CollisionModel* ret = new CollisionModel;
 	ret->fullPolyModel = NULL;
 	ret->fullPolyModelSculpt = base;
 	ret->spheres = NULL;
+	ret->scale = scale;
 	updateMultiModel(ret, sphereCount);
 	return ret;
 }
@@ -278,10 +305,10 @@ void CollisionSystem::updateMultiModel(CollisionModel* cm, int sphereCount) {
 	}
 	cm->spheres = new Sphere[sphereCount];
 	for (c = 0; c < sphereCount; c++) {
-		cm->spheres[c].radius = maxDists[c];
-		cm->spheres[c].relativePosition.x = centers[c].x;
-		cm->spheres[c].relativePosition.y = centers[c].y;
-		cm->spheres[c].relativePosition.z = centers[c].z;
+		cm->spheres[c].radius = maxDists[c] * cm->scale;
+		cm->spheres[c].relativePosition.x = centers[c].x * cm->scale;
+		cm->spheres[c].relativePosition.y = centers[c].y * cm->scale;
+		cm->spheres[c].relativePosition.z = centers[c].z * cm->scale;
 	}
 	delete[] maxDists;
 	delete[] centers;
@@ -493,6 +520,8 @@ void CollisionSystem::render() {
 			glRotatef(worldObjects[i].rotation.y, 0, 1, 0);
 			glRotatef(worldObjects[i].rotation.x, 1, 0, 0);
 			//glutSolidSphere(worldObjects[i].radius, 50, 50);
+			float scale = worldObjects[i].collisionModel->scale;
+			glScalef(scale, scale, scale);
 			worldObjects[i].displayModel->RenderGeometry(0);
 			// draw spheres
 			//for (int s = 0; s < worldObjects[i].collisionModel->sphereCount;
@@ -634,40 +663,48 @@ bool CollisionSystem::detectCollision(int obj1, int obj2) {
 
 void CollisionSystem::reactCollision(int obj1, int obj2, G308_Point relPos1,
 		G308_Point relPos2) {
-	// approximate a collision between obj1 and obj2
-	// give them a very strong push away from each other in the vector of the collision
-	G308_Vector diffvector;
-	diffvector.x = (relPos2.x + worldObjects[obj2].position.x)
-			- (relPos1.x + worldObjects[obj1].position.x);
-	diffvector.y = (relPos2.y + worldObjects[obj2].position.y)
-			- (relPos1.y + worldObjects[obj1].position.y);
-	diffvector.z = (relPos2.z + worldObjects[obj2].position.z)
-			- (relPos1.z + worldObjects[obj1].position.z);
-	normalize(&diffvector);
-	// Diffvector now points from obj1 to obj2
-	// So push obj2 further in this direction
-	// and pull obj1 in the other direction
-	G308_Vector newMovement;
-	float repelFactor = 0.25;
-	newMovement.x = diffvector.x * repelFactor
-			+ worldObjects[obj2].direction.x * worldObjects[obj2].speed;
-	newMovement.y = diffvector.y * repelFactor
-			+ worldObjects[obj2].direction.y * worldObjects[obj2].speed;
-	newMovement.z = diffvector.z * repelFactor
-			+ worldObjects[obj2].direction.z * worldObjects[obj2].speed;
-	worldObjects[obj2].speed = magnitude(&newMovement);
-	normalize(&newMovement);
-	worldObjects[obj2].direction = newMovement;
-	// and the pull
-	newMovement.x = -diffvector.x * repelFactor
-			+ worldObjects[obj1].direction.x * worldObjects[obj1].speed;
-	newMovement.y = -diffvector.y * repelFactor
-			+ worldObjects[obj1].direction.y * worldObjects[obj1].speed;
-	newMovement.z = -diffvector.z * repelFactor
-			+ worldObjects[obj1].direction.z * worldObjects[obj1].speed;
-	worldObjects[obj1].speed = magnitude(&newMovement);
-	normalize(&newMovement);
-	worldObjects[obj1].direction = newMovement;
+	if (obj1 == 0) {
+		// lol this is the sun
+		// "destroy" the other object
+		worldObjects[obj2].position.x = 99999 + obj2 * 1000;
+		worldObjects[obj2].speed = 0;
+	} else {
+		// approximate a collision between obj1 and obj2
+		// give them a very strong push away from each other in the vector of the collision
+		G308_Vector diffvector;
+		diffvector.x = (relPos2.x + worldObjects[obj2].position.x)
+				- (relPos1.x + worldObjects[obj1].position.x);
+		diffvector.y = (relPos2.y + worldObjects[obj2].position.y)
+				- (relPos1.y + worldObjects[obj1].position.y);
+		diffvector.z = (relPos2.z + worldObjects[obj2].position.z)
+				- (relPos1.z + worldObjects[obj1].position.z);
+		normalize(&diffvector);
+		// Diffvector now points from obj1 to obj2
+		// So push obj2 further in this direction
+		// and pull obj1 in the other direction
+		G308_Vector newMovement;
+		float repelFactor = 0.25
+				* (worldObjects[obj1].weight + worldObjects[obj2].weight) / 2;
+		newMovement.x = diffvector.x * repelFactor / worldObjects[obj2].weight
+				+ worldObjects[obj2].direction.x * worldObjects[obj2].speed;
+		newMovement.y = diffvector.y * repelFactor / worldObjects[obj2].weight
+				+ worldObjects[obj2].direction.y * worldObjects[obj2].speed;
+		newMovement.z = diffvector.z * repelFactor / worldObjects[obj2].weight
+				+ worldObjects[obj2].direction.z * worldObjects[obj2].speed;
+		worldObjects[obj2].speed = magnitude(&newMovement);
+		normalize(&newMovement);
+		worldObjects[obj2].direction = newMovement;
+		// and the pull
+		newMovement.x = -diffvector.x * repelFactor / worldObjects[obj1].weight
+				+ worldObjects[obj1].direction.x * worldObjects[obj1].speed;
+		newMovement.y = -diffvector.y * repelFactor / worldObjects[obj1].weight
+				+ worldObjects[obj1].direction.y * worldObjects[obj1].speed;
+		newMovement.z = -diffvector.z * repelFactor / worldObjects[obj1].weight
+				+ worldObjects[obj1].direction.z * worldObjects[obj1].speed;
+		worldObjects[obj1].speed = magnitude(&newMovement);
+		normalize(&newMovement);
+		worldObjects[obj1].direction = newMovement;
+	}
 }
 
 void CollisionSystem::processPhysics() {
@@ -683,7 +720,6 @@ void CollisionSystem::processPhysics() {
 	}
 
 // basic gravity
-	float gconstant = 0.000000067;
 	for (int i = 0; i <= num_NonSunObjects; i++) {
 		for (int j = 0; j <= num_NonSunObjects; j++) {
 			if (i == j) {
