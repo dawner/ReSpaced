@@ -14,6 +14,7 @@
 #include "SculptObject.h"
 
 int spheresPerModel = 24;
+float gconstant = 0.000000067;
 
 CollisionSystem::CollisionSystem(SculptObject** models) {
 	num_NonSunObjects = 18;
@@ -70,7 +71,7 @@ CollisionSystem::CollisionSystem(SculptObject** models) {
 	worldObjects[1].direction.y = 5;
 	worldObjects[1].direction.z = 0;
 	normalize(&worldObjects[1].direction);
-	worldObjects[1].speed = 0.036;
+	worldObjects[1].speed = orbitalVelocity(0, 1);
 	worldObjects[1].weight = 50;
 
 	worldObjects[2].position.x = 5;
@@ -81,7 +82,7 @@ CollisionSystem::CollisionSystem(SculptObject** models) {
 	worldObjects[2].direction.y = -5;
 	worldObjects[2].direction.z = 0;
 	normalize(&worldObjects[2].direction);
-	worldObjects[2].speed = 0.0295;
+	worldObjects[2].speed = orbitalVelocity(0, 2);
 	worldObjects[2].weight = 100;
 
 	worldObjects[3].position.x = 6.5;
@@ -92,7 +93,7 @@ CollisionSystem::CollisionSystem(SculptObject** models) {
 	worldObjects[3].direction.y = -5;
 	worldObjects[3].direction.z = 0;
 	normalize(&worldObjects[3].direction);
-	worldObjects[3].speed = 0.0273;
+	worldObjects[3].speed = orbitalVelocity(0, 3);
 	worldObjects[3].weight = 200;
 
 	// static meteors (collision system)
@@ -136,7 +137,7 @@ CollisionSystem::CollisionSystem(SculptObject** models) {
 		}
 		worldObjects[i].direction.z = 0;
 		normalize(&(worldObjects[i].direction));
-		worldObjects[i].speed = 0.0265;
+		worldObjects[i].speed = orbitalVelocity(0, i);
 
 		int astModel = rand() % 3;
 		worldObjects[i].displayModel = models[astModel + 1];
@@ -179,6 +180,15 @@ CollisionSystem::CollisionSystem(SculptObject** models) {
 			worldObjects[i].radius = radius;
 		}
 	}
+}
+
+float CollisionSystem::orbitalVelocity(int orbited, int orbiting) {
+	float dist = distanceCalcP(worldObjects[orbited].position,
+			worldObjects[orbiting].position);
+	return sqrt(
+			pow(worldObjects[orbited].weight, 2) * gconstant
+					/ (worldObjects[orbited].weight
+							+ worldObjects[orbiting].weight) / dist);
 }
 
 CollisionSystem::CollisionModel* CollisionSystem::simpleSphereModel(
@@ -710,7 +720,6 @@ void CollisionSystem::processPhysics() {
 	}
 
 // basic gravity
-	float gconstant = 0.000000067;
 	for (int i = 0; i <= num_NonSunObjects; i++) {
 		for (int j = 0; j <= num_NonSunObjects; j++) {
 			if (i == j) {
@@ -742,10 +751,10 @@ void CollisionSystem::processPhysics() {
 			worldObjects[j].direction = newMovement;
 		}
 	}
-	//printf("Distances: %f/%f/%f\n",
-	//		distanceCalcP(worldObjects[0].position, worldObjects[1].position),
-	//		distanceCalcP(worldObjects[0].position, worldObjects[2].position),
-	//		distanceCalcP(worldObjects[0].position, worldObjects[3].position));
+	printf("Distances: %f/%f/%f\n",
+			distanceCalcP(worldObjects[0].position, worldObjects[1].position),
+			distanceCalcP(worldObjects[0].position, worldObjects[2].position),
+			distanceCalcP(worldObjects[0].position, worldObjects[3].position));
 }
 
 float CollisionSystem::dotProduct(G308_Vector* from, G308_Vector* to) {

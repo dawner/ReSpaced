@@ -82,6 +82,7 @@ private:
 	CollisionModel* multiSphereModel(SculptObject*, int, float);
 	void updateMultiModel(CollisionModel*, int);
 	G308_Point* pickRandomPoints(G308_Point*, int, int);
+	float orbitalVelocity(int, int);
 
 public:
 	CollisionSystem(SculptObject**);
