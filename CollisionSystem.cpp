@@ -751,10 +751,6 @@ void CollisionSystem::processPhysics() {
 			worldObjects[j].direction = newMovement;
 		}
 	}
-	printf("Distances: %f/%f/%f\n",
-			distanceCalcP(worldObjects[0].position, worldObjects[1].position),
-			distanceCalcP(worldObjects[0].position, worldObjects[2].position),
-			distanceCalcP(worldObjects[0].position, worldObjects[3].position));
 }
 
 float CollisionSystem::dotProduct(G308_Vector* from, G308_Vector* to) {
