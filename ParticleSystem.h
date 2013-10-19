@@ -79,4 +79,7 @@ public:
 
 	void killAll();
 
+	void changeLife(float speed_change);
+	void changeColour(float col_change);
+
 };

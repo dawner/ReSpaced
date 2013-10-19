@@ -50,6 +50,8 @@ void G308_SetLight();
 void G308_mouseListener(int button, int state, int x, int y);
 void updateMouse(int, int);
 void G308_keyboardListener(unsigned char, int, int);
+void G308_arrow_keys(int key, int x, int y);
+
 
 //Sculpting variables.
 bool sculpt_mode = false;
@@ -86,6 +88,7 @@ int main(int argc, char** argv) {
 	glutMouseFunc(G308_mouseListener);
 	glutMotionFunc(updateMouse);
 	glutKeyboardFunc(G308_keyboardListener);
+	glutSpecialFunc(G308_arrow_keys); 
 
 	//Sculpt stuff.
 	for (int i = 0; i < 7; i++) {
@@ -275,6 +278,21 @@ void G308_SetLight() {
 	float ambient[] = { 0.05f, 0.05f, 0.05f, 1.0f };
 	glLightfv(GL_LIGHT3, GL_AMBIENT, ambient);
 	glEnable(GL_LIGHT3);
+}
+
+void G308_arrow_keys(int key, int x, int y){
+	if (key == GLUT_KEY_UP){
+		particle_system->changeLife(10);
+	}
+	if (key == GLUT_KEY_DOWN){ 
+		particle_system->changeLife(-10);
+	}
+	if (key == GLUT_KEY_LEFT){ 
+		particle_system->changeColour(-0.05);
+	}
+	if (key == GLUT_KEY_RIGHT){ 
+		particle_system->changeColour(0.05);
+	}
 }
 
 void G308_keyboardListener(unsigned char key, int x, int y) {

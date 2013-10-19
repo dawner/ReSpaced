@@ -85,6 +85,24 @@ ParticleSystem::~ParticleSystem(void) {
 	delete[] particles;
 }
 
+void ParticleSystem::changeLife(float life_change){
+	if ((life+life_change)>0 &&(life+life_change)<100)
+		life+=life_change;
+}
+void ParticleSystem::changeColour(float col_change){
+	if (col_change>0){
+		if ((colour.g+col_change)<=0.8)
+			colour.g+=col_change;
+		else if ((colour.b+col_change)<=1.0)
+			colour.b+=col_change;
+	}else{
+		if ((colour.b+col_change)>0)
+			colour.b+=col_change;
+		else if ((colour.g+col_change)>0)
+			colour.g+=col_change;
+	}
+}
+
 /* If space, creates a new particle, with random variables. 
 / Every flare_n-th particle is marked as a flare */
 void ParticleSystem::CreateParticle(){
@@ -120,7 +138,7 @@ void ParticleSystem::CreateParticle(){
 		p->colour.g=flare_colour.g+flare_colour_variation.g*random();
 		p->colour.b=flare_colour.b+flare_colour_variation.b*random();
 
-		p->life = (life*2.8 + life_variation*random());
+		p->life = (80 + life_variation*random());
 
 		p->is_flare=true;
 		tail_pointer+=1;
@@ -229,8 +247,6 @@ void ParticleSystem::drawParticle(Particle* p,float rot_x, float rot_y){
 			glVertex3f(particle_size, -particle_size, 0); 
 		glEnd();
 	}
-
-
 }
 
 /* Draw solar flare's tail                     */
