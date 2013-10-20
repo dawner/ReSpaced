@@ -144,7 +144,7 @@ CollisionSystem::CollisionSystem(SculptObject** models) {
 		worldObjects[i].collisionModel = collisionModels[astModel + 2];
 	}
 
-// bounding spheres
+	// bounding spheres
 	for (i = 0; i <= num_NonSunObjects; i++) {
 		if (i == 0) {
 			worldObjects[i].radius = 2;
@@ -214,7 +214,7 @@ CollisionSystem::CollisionModel* CollisionSystem::simpleSphereModel(
 
 CollisionSystem::CollisionModel* CollisionSystem::multiSphereModel(
 		SculptObject* base, int sphereCount, float scale) {
-	// sweet, now sphere time
+	// create the multi sphere model
 	CollisionModel* ret = new CollisionModel;
 	ret->fullPolyModel = NULL;
 	ret->fullPolyModelSculpt = base;
@@ -299,6 +299,7 @@ void CollisionSystem::updateMultiModel(CollisionModel* cm, int sphereCount) {
 			maxDists[clusterIndexes[i]] = dist;
 		}
 	}
+	// create the actual spheres
 	cm->sphereCount = sphereCount;
 	if (cm->spheres != NULL) {
 		delete[] cm->spheres;
@@ -317,6 +318,7 @@ void CollisionSystem::updateMultiModel(CollisionModel* cm, int sphereCount) {
 
 G308_Point* CollisionSystem::pickRandomPoints(G308_Point* vertices, int count,
 		int howMany) {
+	// pick unique points
 	int* choices = new int[howMany];
 	int i;
 	for (i = 0; i < howMany; i++) {
@@ -506,9 +508,6 @@ float CollisionSystem::floatRand(int min, int max, int precision) {
 }
 
 void CollisionSystem::render() {
-	// temp
-	//glEnable(GL_COLOR_MATERIAL);
-	//glColorMaterial(GL_FRONT_AND_BACK, GL_AMBIENT_AND_DIFFUSE);
 	for (int i = 0; i <= num_NonSunObjects; i++) {
 		if (worldObjects[i].displayModel != NULL) {
 			// show this one
@@ -519,23 +518,9 @@ void CollisionSystem::render() {
 			glRotatef(worldObjects[i].rotation.z, 0, 0, 1);
 			glRotatef(worldObjects[i].rotation.y, 0, 1, 0);
 			glRotatef(worldObjects[i].rotation.x, 1, 0, 0);
-			//glutSolidSphere(worldObjects[i].radius, 50, 50);
 			float scale = worldObjects[i].collisionModel->scale;
 			glScalef(scale, scale, scale);
 			worldObjects[i].displayModel->RenderGeometry(0);
-			// draw spheres
-			//for (int s = 0; s < worldObjects[i].collisionModel->sphereCount;
-			//		s++) {
-			//	glPushMatrix();
-			//	glTranslatef(
-			//			worldObjects[i].collisionModel->spheres[s].relativePosition.x,
-			//			worldObjects[i].collisionModel->spheres[s].relativePosition.y,
-			//			worldObjects[i].collisionModel->spheres[s].relativePosition.z);
-			//	glutSolidSphere(
-			//			worldObjects[i].collisionModel->spheres[s].radius, 10,
-			//			10);
-			//	glPopMatrix();
-			//}
 			glPopMatrix();
 		}
 	}
@@ -543,7 +528,7 @@ void CollisionSystem::render() {
 }
 
 void CollisionSystem::processCollisions() {
-// opening round: bounding spheres
+// opening round: outer bounding spheres
 	for (int i = 0; i <= num_NonSunObjects; i++) {
 		for (int j = i + 1; j <= num_NonSunObjects; j++) {
 			float distance = distanceCalc(worldObjects[i].position,
@@ -664,8 +649,8 @@ bool CollisionSystem::detectCollision(int obj1, int obj2) {
 void CollisionSystem::reactCollision(int obj1, int obj2, G308_Point relPos1,
 		G308_Point relPos2) {
 	if (obj1 == 0) {
-		// lol this is the sun
-		// "destroy" the other object
+		// this is the sun
+		// "destroy" the other object by throwing it out of the clipping plane
 		worldObjects[obj2].position.x = 99999 + obj2 * 1000;
 		worldObjects[obj2].speed = 0;
 	} else {
