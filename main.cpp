@@ -149,7 +149,7 @@ void G308_Display() {
 		glEnable(GL_LIGHTING);
 		glEnable(GL_COLOR_MATERIAL);
 		glColorMaterial(GL_FRONT_AND_BACK, GL_AMBIENT_AND_DIFFUSE);
-		glEnable(GL_NORMALIZE); //ensure lighting is uneffected by scaling
+		glEnable(GL_NORMALIZE); //ensure lighting is unaffected by scaling
 
 		glColor3f(1, 1, 0.8);
 
@@ -187,7 +187,6 @@ void G308_Display() {
 		glPopMatrix();
 
 		glMatrixMode(GL_MODELVIEW);
-
 		glDisable(GL_DEPTH_TEST);
 		glDisable(GL_LIGHTING);
 		glDisable(GL_COLOR_MATERIAL);
@@ -212,6 +211,7 @@ void G308_Reshape(int w, int h) {
 }
 
 void SculptingLight() {
+	//Clearer, unmoving lights for sculpting.
 	float point_pos[] = { 0.0, 0.0, 1.0, 0.0f };
 	float point_intensity[] = { 0.8, 0.8, 0.8, 1.0f };
 
@@ -312,10 +312,14 @@ void G308_keyboardListener(unsigned char key, int x, int y) {
 	if (sculpt_mode) {
 		//Toggle sculpting or painting.
 		if (key == 't') {
-			if (tool == 1)
+			if (tool == 1){
+				printf("Texture brush.\n");
 				tool = 2;
-			else
+			}
+			else {
 				tool = 1;
+				printf("Geometry brush.\n");
+			}
 		}
 		//Colour alpha up and down.
 		else if (key == 'w') {
@@ -346,16 +350,19 @@ void G308_keyboardListener(unsigned char key, int x, int y) {
 		} else if (key == 'z') {
 			sculpt_dist = max(sculpt_dist - 0.5f, 0.0f);
 			printf("Brush size: %f\n", sculpt_dist);
-		} else if (key == 'c') {
+		} 
+		//Save the object.
+		else if (key == 'c') {
 			char filename[80];
 			printf("Enter obj name:\n");
 			scanf("%s", filename);
 			sculptedModels[sculpt]->SaveOBJ(filename);
-
 			printf("Enter texture name:\n");
 			scanf("%s", filename);
 			sculptedModels[sculpt]->SaveTexture(filename);
-		} else if (key == 'e') {
+		} 
+		//Cycle through the objects.
+		else if (key == 'e') {
 			sculpt = (sculpt + 1) % 7;
 		}
 	}

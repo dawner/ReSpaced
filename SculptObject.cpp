@@ -1,5 +1,4 @@
 #include "SculptObject.h"
-//#include "G308_ImageLoader.h"
 #include <stdio.h>
 #include <math.h>
 #include "define.h"
@@ -304,6 +303,8 @@ void SculptObject::MouseDrag(int x, int y, float strength, float distance, int m
 }
 
 void SculptObject::Sculpt(int poly, float strength, float max_dist, float cur_dist){
+	//Moves the vertices of the selected poly along their normals by the strength,
+	//recurses to surrounding faces and then recalcuates normals.
 	if (cur_dist < max_dist) {
 		if (edited_triangles.count(poly) != 1) {
 			edited_triangles.insert(poly);
@@ -320,10 +321,6 @@ void SculptObject::Sculpt(int poly, float strength, float max_dist, float cur_di
 			m_pVertexArray[m_pTriangles[poly].v3].x += m_pNormalArray[m_pTriangles[poly].n3].x*cur_strength;
 			m_pVertexArray[m_pTriangles[poly].v3].y += m_pNormalArray[m_pTriangles[poly].n3].y*cur_strength;
 			m_pVertexArray[m_pTriangles[poly].v3].z += m_pNormalArray[m_pTriangles[poly].n3].z*cur_strength;
-
-			calculateVertexNormal(m_pTriangles[poly].n1);
-			calculateVertexNormal(m_pTriangles[poly].n2);
-			calculateVertexNormal(m_pTriangles[poly].n3);
 
 			for (int i = 0; i < v_vertex_faces[m_pTriangles[poly].v1].size(); i++){
 				int v1 = m_pTriangles[poly].v1;
@@ -348,12 +345,18 @@ void SculptObject::Sculpt(int poly, float strength, float max_dist, float cur_di
 					Sculpt(v2, strength, max_dist, cur_dist + calculateDistance(v1, v2));
 				}
 			}
+
+			calculateVertexNormal(m_pTriangles[poly].n1);
+			calculateVertexNormal(m_pTriangles[poly].n2);
+			calculateVertexNormal(m_pTriangles[poly].n3);
 			geometry_changed = true;
 		}
 	}
 }
 
 void SculptObject::Paint(int pixel, int distance){
+	//Fills every pixel within the distance of the pixel selected with the current colour
+	//at the current alpha level.
 	for (int x = -distance; x < distance; x++){
 		for (int y = -distance; y < distance; y++){
 			if (sqrt(x*x + y*y) < distance){
@@ -372,6 +375,7 @@ void SculptObject::Paint(int pixel, int distance){
 }
 
 void SculptObject::FillColour(){
+	//Fills every pixel of the texture with the current colour.
 	for (int i = 0; i < (width*height*3)-2; i+=3){
 		texture[i] = current_colour[0]*current_colour[3] + texture[i]*(1.0f-current_colour[3]);
 		texture[i+1] = current_colour[1]*current_colour[3] + texture[i+1]*(1.0f-current_colour[3]);
@@ -392,6 +396,7 @@ float SculptObject::calculateDistance(int v1, int v2) {
 }
 
 void SculptObject::calculateVertexNormal(int vertex) {
+	//Calculates the face normals and then averages them to get the vertex normal.
 	G308_Normal average = {0.0, 0.0, 0.0};
 
 	for (int i = 0; i < v_normal_faces[vertex].size(); i++){
@@ -411,18 +416,19 @@ void SculptObject::calculateVertexNormal(int vertex) {
 G308_Point SculptObject::calculateFaceNormal(int face) {
 
 	G308_Point normal;
-	float Ux, Uy, Uz, Vx, Vy, Vz;
+	G308_Point u;
+	G308_Point v;
 	double l;
 
-	Ux = m_pVertexArray[m_pTriangles[face].v2].x - m_pVertexArray[m_pTriangles[face].v1].x;
-	Uy = m_pVertexArray[m_pTriangles[face].v2].y - m_pVertexArray[m_pTriangles[face].v1].y;
-	Uz = m_pVertexArray[m_pTriangles[face].v2].z - m_pVertexArray[m_pTriangles[face].v1].z;
-	Vx = m_pVertexArray[m_pTriangles[face].v3].x - m_pVertexArray[m_pTriangles[face].v1].x;
-	Vy = m_pVertexArray[m_pTriangles[face].v3].y - m_pVertexArray[m_pTriangles[face].v1].y;
-	Vz = m_pVertexArray[m_pTriangles[face].v3].z - m_pVertexArray[m_pTriangles[face].v1].z;
-	normal.x = (Uy * Vz) - (Uz * Vy);
-	normal.y = (Uz * Vx) - (Ux * Vz);
-	normal.z = (Ux * Vy) - (Uy * Vx);
+	u.x = m_pVertexArray[m_pTriangles[face].v2].x - m_pVertexArray[m_pTriangles[face].v1].x;
+	u.y = m_pVertexArray[m_pTriangles[face].v2].y - m_pVertexArray[m_pTriangles[face].v1].y;
+	u.z = m_pVertexArray[m_pTriangles[face].v2].z - m_pVertexArray[m_pTriangles[face].v1].z;
+	v.x = m_pVertexArray[m_pTriangles[face].v3].x - m_pVertexArray[m_pTriangles[face].v1].x;
+	v.y = m_pVertexArray[m_pTriangles[face].v3].y - m_pVertexArray[m_pTriangles[face].v1].y;
+	v.z = m_pVertexArray[m_pTriangles[face].v3].z - m_pVertexArray[m_pTriangles[face].v1].z;
+	normal.x = (u.y * v.z) - (u.z * v.y);
+	normal.y = (u.z * v.x) - (u.x * v.z);
+	normal.z = (u.x * v.y) - (u.y * v.x);
 	l = sqrt(normal.x * normal.x + normal.y * normal.y + normal.z * normal.z);
 	normal.x /= l;
 	normal.y /= l;
@@ -432,23 +438,13 @@ G308_Point SculptObject::calculateFaceNormal(int face) {
 
 void SculptObject::RenderGeometry(int mode) {
 	glColor3f(1.0f, 1.0f, 1.0f);
+	//Texture point picking mode.
 	if (mode == 2) {
 			glEnable(GL_TEXTURE_2D);
 			glBindTexture(GL_TEXTURE_2D, pick_texture);
 			glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_COLOR, GL_REPLACE);
-
-			//glTexGeni(GL_S, GL_TEXTURE_GEN_MODE, GL_OBJECT_LINEAR);
-			//glTexGeni(GL_T, GL_TEXTURE_GEN_MODE, GL_OBJECT_LINEAR);
-			//glTexGenfv(GL_S, GL_OBJECT_PLANE, zPlane);
-           // glTexGenfv(GL_T, GL_OBJECT_PLANE, zPlane);
-			//glTexGeni(GL_R, GL_TEXTURE_GEN_MODE, GL_OBJECT_LINEAR);
-			//glTexGeni(GL_Q, GL_TEXTURE_GEN_MODE, GL_OBJECT_LINEAR);
-
-			//glEnable(GL_TEXTURE_GEN_S);
-			//glEnable(GL_TEXTURE_GEN_T);
-			//glEnable(GL_TEXTURE_GEN_R);
-			//glEnable(GL_TEXTURE_GEN_Q);
 	}
+	//Normal display mode.
 	else if (mode == 0) {
 		glEnable(GL_TEXTURE_2D);
 		glBindTexture(GL_TEXTURE_2D, display_texture);
@@ -456,6 +452,7 @@ void SculptObject::RenderGeometry(int mode) {
 	}
 	int n;
 	for (n = 0; n < m_nNumPolygon; n++){
+		//Poly picking mode.
 		if (mode == 1) {
 			glColor3f(((n+1) % 256)/255.0f, ((n / 256) % 256)/255.0f, ((n / 65536) % 256)/255.0f);
 		}

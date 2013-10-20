@@ -9,7 +9,7 @@
 
 class SculptObject {
 private:
-
+	//Information for sculpting efficiently.
 	std::vector<int> *v_normal_faces;
 	std::vector<int> *v_vertex_faces;
 	std::set<int> edited_triangles;
@@ -45,16 +45,17 @@ public:
 	void SaveOBJ(char* filename);
 	void SaveTexture(char* filename);
 
+	//Sculpting and painting functions.
 	void MouseDrag(int x, int y, float strength, float distance, int mode);
 	void Sculpt(int poly, float strength, float max_dist, float cur_dist);
 	void Paint(int pixel, int distance);
 	void FillColour();
 	void SetCurrentColour(float r, float g, float b, float a);
-
-	void RenderGeometry(int mode); // mode : G308_SHADE_POLYGON, G308_SHADE_WIREFRAME
 	void calculateVertexNormal(int vertex);
 	float calculateDistance(int v1, int v2);
 	G308_Point calculateFaceNormal(int face);
+
+	void RenderGeometry(int mode); // mode : 0 normal, 1 geometry picking, 2 texture picking.
 
 };
 
